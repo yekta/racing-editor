@@ -4,14 +4,30 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
-import { useEffect, useRef, useState } from "react";
+import {
+  FlagIcon,
+  MapPinIcon,
+  RocketIcon,
+  TimerIcon,
+  Trash2Icon,
+} from "lucide-react";
+import { FC, useEffect, useRef, useState } from "react";
 
 type TProps = {
   frameStamps: TFrameStamps;
+  onClickDeleteSector: (index: number) => void;
+  onClickDeleteStart: () => void;
+  onClickDeleteEnd: () => void;
   videoProperties: TVideoProperties;
 };
 
-export default function Sidebar({ frameStamps, videoProperties }: TProps) {
+export default function Sidebar({
+  frameStamps,
+  videoProperties,
+  onClickDeleteSector,
+  onClickDeleteStart,
+  onClickDeleteEnd,
+}: TProps) {
   const [isFfmpegLoaded, setIsFfmpegLoaded] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -76,7 +92,7 @@ export default function Sidebar({ frameStamps, videoProperties }: TProps) {
 
   return (
     <div className="w-80 border-l overflow-hidden flex flex-col relative">
-      <div className="flex-1 flex flex-col overflow-auto px-5 py-3 gap-4">
+      <div className="flex-1 flex flex-col overflow-auto px-5 py-4 gap-5">
         <Section
           title="Lap Time"
           frame={
@@ -85,21 +101,24 @@ export default function Sidebar({ frameStamps, videoProperties }: TProps) {
               : null
           }
           videoProperties={videoProperties}
+          Icon={TimerIcon}
         />
-        {frameStamps.start !== null &&
-          frameStamps.end !== null &&
-          frameStamps.sectors.map((sector, index) => (
-            <Section
-              key={index}
-              title={`Sector ${index + 1}`}
-              frame={
-                index === 0
-                  ? sector - frameStamps.start!
-                  : sector - frameStamps.sectors[index - 1]
-              }
-              videoProperties={videoProperties}
-            />
-          ))}
+        {frameStamps.sectors.map((sector, index) => (
+          <Section
+            key={index}
+            title={`Sector ${index + 1}`}
+            frame={
+              frameStamps.start === null
+                ? null
+                : index === 0
+                ? sector - frameStamps.start!
+                : sector - frameStamps.sectors[index - 1]
+            }
+            videoProperties={videoProperties}
+            onClickDelete={() => onClickDeleteSector(index)}
+            Icon={MapPinIcon}
+          />
+        ))}
         {frameStamps.start !== null &&
           frameStamps.end !== null &&
           frameStamps.sectors.length >= 1 && (
@@ -110,14 +129,36 @@ export default function Sidebar({ frameStamps, videoProperties }: TProps) {
                 frameStamps.sectors[frameStamps.sectors.length - 1]
               }
               videoProperties={videoProperties}
+              Icon={MapPinIcon}
             />
           )}
+        {(frameStamps.start !== null || frameStamps.end !== null) && (
+          <div className="w-[calc(100%+1rem)] -mx-2 h-px bg-border rounded-full" />
+        )}
+        {frameStamps.start !== null && (
+          <Section
+            title="Start"
+            frame={frameStamps.start}
+            videoProperties={videoProperties}
+            onClickDelete={onClickDeleteStart}
+            Icon={RocketIcon}
+          />
+        )}
+        {frameStamps.end !== null && (
+          <Section
+            title="End"
+            frame={frameStamps.end}
+            videoProperties={videoProperties}
+            onClickDelete={onClickDeleteEnd}
+            Icon={FlagIcon}
+          />
+        )}
       </div>
       <div className="w-full p-4 border-t">
         <Button
           onClick={render}
           disabled={!isFfmpegLoaded || isRendering}
-          className="w-full"
+          className="w-full font-extrabold"
         >
           {isRendering
             ? `Rendering: ${Math.ceil(progress * 100)}%`
@@ -136,26 +177,51 @@ function Section({
   videoProperties,
   className,
   classNameParagraph,
+  onClickDelete,
+  Icon,
 }: {
   title: string;
   frame: number | null;
   videoProperties: TVideoProperties;
   className?: string;
   classNameParagraph?: string;
+  onClickDelete?: () => void;
+  Icon: FC<{ className?: string }>;
 }) {
   return (
-    <div className={cn("w-full flex flex-col", className)}>
-      <h3 className="w-full text-sm font-medium text-muted-foreground">
-        {title}
-      </h3>
-      <p className={cn("w-full text-xl font-bold", classNameParagraph)}>
-        {frame !== null
-          ? getTimeStringFromFrame({
-              frame,
-              frameRate: videoProperties.frameRate,
-            })
-          : "N/A"}
-      </p>
+    <div className={cn("w-full flex items-end", className)}>
+      <div className="w-full flex flex-col gap-1">
+        <div className="w-full flex text-muted-foreground gap-1.5">
+          <Icon className="size-4 shrink-0" />
+          <h3 className="min-w-0 shrink leading-tight text-sm font-medium">
+            {title}
+          </h3>
+        </div>
+
+        <p
+          className={cn(
+            "w-full text-xl font-bold leading-tight",
+            classNameParagraph
+          )}
+        >
+          {frame !== null
+            ? getTimeStringFromFrame({
+                frame,
+                frameRate: videoProperties.frameRate,
+              })
+            : "N/A"}
+        </p>
+      </div>
+      {onClickDelete && (
+        <Button
+          size="icon"
+          variant="destructive-ghost"
+          className="text-muted-foreground"
+          onClick={onClickDelete}
+        >
+          <Trash2Icon className="size-4.5" />
+        </Button>
+      )}
     </div>
   );
 }

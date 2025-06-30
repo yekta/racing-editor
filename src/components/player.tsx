@@ -13,6 +13,7 @@ import {
   MapPin,
   PauseIcon,
   PlayIcon,
+  RocketIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
@@ -67,7 +68,7 @@ export default function Player() {
     }
   };
 
-  const updateSliderPosition = () => {
+  const updateSliderPosition = useCallback(() => {
     if (videoRef.current && videoProperties && !isDragging && isPlaying) {
       const currentTime = videoRef.current.currentTime;
       const currentFrame = Math.round(
@@ -79,7 +80,7 @@ export default function Player() {
     if (isPlaying) {
       animationFrameRef.current = requestAnimationFrame(updateSliderPosition);
     }
-  };
+  }, [isDragging, isPlaying, videoProperties]);
 
   const togglePlayPause = useCallback(() => {
     setIsPlaying((p) => {
@@ -105,7 +106,7 @@ export default function Player() {
     const newTime =
       (newFrame / videoProperties.totalFrames) * videoProperties.duration;
     videoRef.current.currentTime = newTime;
-  }, []);
+  }, [videoProperties]);
 
   const goToNextFrame = useCallback(() => {
     if (!videoRef.current || !videoProperties) return;
@@ -119,7 +120,7 @@ export default function Player() {
     const newTime =
       (newFrame / videoProperties.totalFrames) * videoProperties.duration;
     videoRef.current.currentTime = newTime;
-  }, []);
+  }, [videoProperties]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -142,7 +143,7 @@ export default function Player() {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isPlaying, videoProperties]);
+  }, [isPlaying, videoProperties, updateSliderPosition]);
 
   useHotkeys("space", togglePlayPause, {
     enableOnContentEditable: true,
@@ -251,7 +252,6 @@ export default function Player() {
                         className="bg-success"
                       />
                     )}
-
                     {frameStamps.sectors.map((sector, index) => (
                       <Indicator
                         key={index}
@@ -282,7 +282,7 @@ export default function Player() {
                       step={1}
                     />
                   </div>
-                  <div className="w-full gap-2 flex">
+                  <div className="w-full gap-2 flex flex-wrap">
                     <Button
                       variant="destructive"
                       className="font-extrabold px-3 py-1.5 rounded-sm"
@@ -293,7 +293,7 @@ export default function Player() {
                         }));
                       }}
                     >
-                      <FlagIcon className="size-4 -ml-0.75" />
+                      <RocketIcon className="size-4.5 -ml-0.75" />
                       <p>Set Start</p>
                     </Button>
                     <Button
@@ -306,7 +306,7 @@ export default function Player() {
                         }));
                       }}
                     >
-                      <FlagIcon className="size-4 -ml-0.75 rotate-y-180" />
+                      <FlagIcon className="size-4.5 -ml-0.75" />
                       Set End
                     </Button>
                     <Button
@@ -336,10 +336,10 @@ export default function Player() {
                         }));
                       }}
                     >
-                      <MapPin className="size-4 -ml-0.75" />
+                      <MapPin className="size-4.5 -ml-0.75" />
                       {frameStamps.sectors.includes(sliderValue[0])
                         ? "Remove Sector"
-                        : "Set Sector"}
+                        : "Add Sector"}
                     </Button>
                   </div>
                 </div>
@@ -349,6 +349,28 @@ export default function Player() {
           <Sidebar
             frameStamps={frameStamps}
             videoProperties={videoProperties}
+            onClickDeleteSector={(index) => {
+              setFrameStamps((prev) => {
+                const newSectors = [...prev.sectors];
+                newSectors.splice(index, 1);
+                return {
+                  ...prev,
+                  sectors: newSectors,
+                };
+              });
+            }}
+            onClickDeleteStart={() => {
+              setFrameStamps((prev) => ({
+                ...prev,
+                start: null,
+              }));
+            }}
+            onClickDeleteEnd={() => {
+              setFrameStamps((prev) => ({
+                ...prev,
+                end: null,
+              }));
+            }}
           />
         </div>
       )}
