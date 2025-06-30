@@ -45,7 +45,7 @@ function Slider({
         <SliderPrimitive.Range
           data-slot="slider-range"
           className={cn(
-            "bg-destructive/25 absolute data-[orientation=horizontal]:h-12 data-[orientation=vertical]:w-full"
+            "bg-foreground/25 absolute data-[orientation=horizontal]:h-12 data-[orientation=vertical]:w-full"
           )}
         />
       </SliderPrimitive.Track>
@@ -53,9 +53,9 @@ function Slider({
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
-          className="bg-destructive ring-ring/50 w-[2px] h-12 rounded-md block focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+          className="bg-foreground ring-ring/50 w-[2px] h-13 rounded-full block focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
         >
-          <div className="w-2 h-4 absolute left-1/2 top-0 rounded-b-full -translate-x-1/2 bg-destructive" />
+          <div className="w-1.5 h-6 absolute left-1/2 top-1/2 -translate-y-1/2 rounded-full -translate-x-1/2 bg-foreground" />
         </SliderPrimitive.Thumb>
       ))}
     </SliderPrimitive.Root>
