@@ -297,28 +297,6 @@ export default function Player() {
                       <p>Set Start</p>
                     </Button>
                     <Button
-                      variant="warning"
-                      disabled={
-                        frameStamps.start === null ||
-                        frameStamps.end === null ||
-                        sliderValue[0] <= frameStamps.start ||
-                        sliderValue[0] >= frameStamps.end ||
-                        frameStamps.sectors.includes(sliderValue[0])
-                      }
-                      className="font-extrabold px-3 py-1.5 rounded-sm"
-                      onClick={() => {
-                        setFrameStamps((prev) => ({
-                          ...prev,
-                          sectors: [...prev.sectors, sliderValue[0]].sort(
-                            (a, b) => a - b
-                          ),
-                        }));
-                      }}
-                    >
-                      <MapPin className="size-4 -ml-0.75" />
-                      Set Sector
-                    </Button>
-                    <Button
                       variant="success"
                       className="font-extrabold px-3 py-1.5 rounded-sm"
                       onClick={() => {
@@ -330,6 +308,38 @@ export default function Player() {
                     >
                       <FlagIcon className="size-4 -ml-0.75 rotate-y-180" />
                       Set End
+                    </Button>
+                    <Button
+                      variant="warning"
+                      disabled={
+                        frameStamps.start === null ||
+                        frameStamps.end === null ||
+                        sliderValue[0] <= frameStamps.start ||
+                        sliderValue[0] >= frameStamps.end
+                      }
+                      className="font-extrabold px-3 py-1.5 rounded-sm"
+                      onClick={() => {
+                        if (frameStamps.sectors.includes(sliderValue[0])) {
+                          setFrameStamps((prev) => ({
+                            ...prev,
+                            sectors: prev.sectors.filter(
+                              (s) => s !== sliderValue[0]
+                            ),
+                          }));
+                          return;
+                        }
+                        setFrameStamps((prev) => ({
+                          ...prev,
+                          sectors: [...prev.sectors, sliderValue[0]].sort(
+                            (a, b) => a - b
+                          ),
+                        }));
+                      }}
+                    >
+                      <MapPin className="size-4 -ml-0.75" />
+                      {frameStamps.sectors.includes(sliderValue[0])
+                        ? "Remove Sector"
+                        : "Set Sector"}
                     </Button>
                   </div>
                 </div>
