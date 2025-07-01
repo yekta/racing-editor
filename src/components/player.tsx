@@ -1,24 +1,16 @@
 "use client";
 
 import ButtonsBar from "@/components/buttons-bar";
-import { getTimeString } from "@/components/helpers";
-import { Indicator } from "@/components/indicator";
+import Indicators from "@/components/indicators";
+
+import PlayPauseSection from "@/components/play-pause-section";
 import Sidebar from "@/components/sidebar";
+import TimestampSection from "@/components/timestamp-section";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
-import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import useAppHotkeys from "@/lib/use-app-hotkeys";
 import { FFprobeWorker } from "ffprobe-wasm";
-import {
-  ChevronLeft,
-  ChevronRight,
-  FlagIcon,
-  MapPinIcon,
-  PauseIcon,
-  PlayIcon,
-  RocketIcon,
-} from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useHotkeys } from "react-hotkeys-hook";
 
 const worker = new FFprobeWorker();
 
@@ -124,41 +116,68 @@ export default function Player() {
     videoRef.current.currentTime = newTime;
   }, [videoProperties]);
 
-  const Indicators = useCallback(() => {
+  const jumpToPrevIndicator = useCallback(() => {
+    if (!videoRef.current || !videoProperties) return;
+    videoRef.current.pause();
+
+    const currentFrame = Math.round(
+      (videoRef.current.currentTime / videoProperties.duration) *
+        videoProperties.totalFrames
+    );
+
+    const allFrameStamps = [
+      frameStamps.start,
+      frameStamps.end,
+      ...frameStamps.sectors,
+    ].filter((s) => s !== null) as number[];
+
+    const prevFrameStamp = allFrameStamps
+      .filter((s) => s < currentFrame)
+      .sort((a, b) => b - a)[0];
+
+    if (prevFrameStamp !== undefined) {
+      setSliderValue([prevFrameStamp]);
+      const newTime =
+        (prevFrameStamp / videoProperties.totalFrames) *
+        videoProperties.duration;
+      videoRef.current.currentTime = newTime;
+    }
+  }, [videoProperties, frameStamps]);
+
+  const jumpToNextIndicator = useCallback(() => {
+    if (!videoRef.current || !videoProperties) return;
+    videoRef.current.pause();
+
+    const currentFrame = Math.round(
+      (videoRef.current.currentTime / videoProperties.duration) *
+        videoProperties.totalFrames
+    );
+
+    const allFrameStamps = [
+      frameStamps.start,
+      frameStamps.end,
+      ...frameStamps.sectors,
+    ].filter((s) => s !== null) as number[];
+
+    const nextFrameStamp = allFrameStamps
+      .filter((s) => s > currentFrame)
+      .sort((a, b) => a - b)[0];
+
+    if (nextFrameStamp !== undefined) {
+      setSliderValue([nextFrameStamp]);
+      const newTime =
+        (nextFrameStamp / videoProperties.totalFrames) *
+        videoProperties.duration;
+      videoRef.current.currentTime = newTime;
+    }
+  }, [videoProperties, frameStamps]);
+
+  const Indicators_ = useCallback(() => {
     if (!videoProperties) return null;
     return (
-      <>
-        {frameStamps.start !== null && (
-          <Indicator
-            frame={frameStamps.start}
-            videoProperties={videoProperties}
-            className="bg-progress"
-            Icon={RocketIcon}
-            classNameIcon="bg-progress"
-          />
-        )}
-        {frameStamps.end !== null && (
-          <Indicator
-            frame={frameStamps.end}
-            videoProperties={videoProperties}
-            className="bg-success"
-            Icon={FlagIcon}
-            classNameIcon="bg-success"
-          />
-        )}
-        {frameStamps.sectors.map((sector, index) => (
-          <Indicator
-            key={index}
-            frame={sector}
-            videoProperties={videoProperties}
-            className="bg-warning"
-            Icon={MapPinIcon}
-            classNameIcon="bg-warning"
-          />
-        ))}
-      </>
+      <Indicators frameStamps={frameStamps} videoProperties={videoProperties} />
     );
-  }, [videoProperties, frameStamps]);
+  }, [frameStamps, videoProperties]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -175,7 +194,6 @@ export default function Player() {
       }
     }
 
-    // Cleanup on unmount
     return () => {
       if (animationFrameRef.current) {
         cancelAnimationFrame(animationFrameRef.current);
@@ -183,51 +201,16 @@ export default function Player() {
     };
   }, [isPlaying, videoProperties, updateSliderPosition]);
 
-  useHotkeys("space", togglePlayPause, {
-    enableOnContentEditable: true,
-    enableOnFormTags: false,
+  useAppHotkeys({
+    togglePlayPause,
+    goToPrevFrame,
+    goToNextFrame,
+    frameStamps,
+    setFrameStamps,
+    sliderValue,
+    jumpToPrevIndicator,
+    jumpToNextIndicator,
   });
-
-  useHotkeys("arrowleft", goToPrevFrame, {
-    enableOnContentEditable: true,
-    enableOnFormTags: false,
-  });
-
-  useHotkeys("arrowright", goToNextFrame, {
-    enableOnContentEditable: true,
-    enableOnFormTags: false,
-  });
-
-  useHotkeys(
-    "backspace,delete",
-    () => {
-      if (sliderValue[0] === frameStamps.start) {
-        setFrameStamps((prev) => ({
-          ...prev,
-          start: null,
-        }));
-        return;
-      }
-      if (sliderValue[0] === frameStamps.end) {
-        setFrameStamps((prev) => ({
-          ...prev,
-          end: null,
-        }));
-        return;
-      }
-      if (frameStamps.sectors.includes(sliderValue[0])) {
-        setFrameStamps((prev) => ({
-          ...prev,
-          sectors: prev.sectors.filter((s) => s !== sliderValue[0]),
-        }));
-        return;
-      }
-    },
-    {
-      enableOnContentEditable: true,
-      enableOnFormTags: false,
-    }
-  );
 
   return (
     <div className="w-full h-[100svh] flex flex-col">
@@ -249,63 +232,18 @@ export default function Player() {
             </div>
             <div className="w-full flex flex-col border-t p-4">
               <div className="w-full flex items-start gap-4">
-                <div className="flex flex-col gap-4">
-                  <p className="w-full leading-tight -mt-1 px-1 select-none opacity-0">
-                    a
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      className="size-12 border-none"
-                      size="icon"
-                      variant="outline"
-                      onClick={togglePlayPause}
-                    >
-                      {isPlaying ? (
-                        <PauseIcon className="size-6" />
-                      ) : (
-                        <PlayIcon className="size-6" />
-                      )}
-                    </Button>
-                    <div className="flex">
-                      <Button
-                        className="size-12 rounded-r-none border-none"
-                        size="icon"
-                        variant="outline"
-                        onClick={goToPrevFrame}
-                      >
-                        <ChevronLeft className="size-6" />
-                      </Button>
-                      <Button
-                        className="size-12 rounded-l-none border-none"
-                        size="icon"
-                        variant="outline"
-                        onClick={goToNextFrame}
-                      >
-                        <ChevronRight className="size-6" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                <PlayPauseSection
+                  togglePlayPause={togglePlayPause}
+                  goToPrevFrame={goToPrevFrame}
+                  goToNextFrame={goToNextFrame}
+                  isPlaying={isPlaying}
+                />
                 <div className="flex-1 flex flex-col gap-4">
-                  <p className="w-full leading-tight -mt-1 px-1">
-                    {getTimeString(videoRef.current?.currentTime || 0)}
-                    <span className="px-[0.5ch]">{"/"}</span>
-                    {getTimeString(
-                      videoProperties.totalFrames / videoProperties.frameRate
-                    )}{" "}
-                    <span className="text-muted-foreground">
-                      <span className="px-[0.25ch]">(</span>
-                      {sliderValue[0]
-                        .toString()
-                        .padStart(
-                          videoProperties.totalFrames.toString().length,
-                          "0"
-                        )}
-                      <span className="px-[0.5ch]">{"/"}</span>
-                      {videoProperties.totalFrames}
-                      <span className="px-[0.25ch]">)</span>
-                    </span>
-                  </p>
+                  <TimestampSection
+                    videoProperties={videoProperties}
+                    sliderValue={sliderValue}
+                    videoRef={videoRef}
+                  />
                   <Slider
                     value={sliderValue}
                     onKeyDown={(e) => {
@@ -323,10 +261,24 @@ export default function Player() {
                     }}
                     onPointerDown={() => setIsDragging(true)}
                     onPointerUp={() => setIsDragging(false)}
+                    className="group/slider"
+                    data-at-start={
+                      frameStamps.start === sliderValue[0] ? true : undefined
+                    }
+                    data-at-end={
+                      frameStamps.end === sliderValue[0] ? true : undefined
+                    }
+                    data-at-sector={
+                      frameStamps.sectors.includes(sliderValue[0])
+                        ? true
+                        : undefined
+                    }
+                    classNameThumb="group-data-[at-start]/slider:bg-progress group-data-[at-end]/slider:bg-success group-data-[at-sector]/slider:bg-warning"
+                    classNameThumbIndicator="group-data-[at-start]/slider:bg-progress group-data-[at-end]/slider:bg-success group-data-[at-sector]/slider:bg-warning"
                     min={0}
                     max={videoProperties.totalFrames}
                     step={1}
-                    Indicators={Indicators}
+                    Indicators={Indicators_}
                   />
                   <ButtonsBar
                     frameStamps={frameStamps}

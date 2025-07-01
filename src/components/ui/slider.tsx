@@ -12,9 +12,13 @@ function Slider({
   min = 0,
   max = 100,
   Indicators,
+  classNameThumb,
+  classNameThumbIndicator,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root> & {
-  Indicators: React.FC<{ className?: string }>;
+  Indicators: React.FC;
+  classNameThumb?: string;
+  classNameThumbIndicator?: string;
 }) {
   const _values = React.useMemo(
     () =>
@@ -57,9 +61,17 @@ function Slider({
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
-          className="bg-destructive relative ring-ring/50 w-0.5 h-12 rounded-full block focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+          className={cn(
+            "bg-destructive relative ring-ring/50 w-0.5 h-12 rounded-full block focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50",
+            classNameThumb
+          )}
         >
-          <div className="w-2 h-3 absolute left-1/2 top-0 -translate-y-1/2 rounded-t-xs rounded-b-sm -translate-x-1/2 bg-destructive" />
+          <div
+            className={cn(
+              "w-2 h-3 absolute left-1/2 top-0 -translate-y-1/2 rounded-t-xs rounded-b-sm -translate-x-1/2 bg-destructive",
+              classNameThumbIndicator
+            )}
+          />
         </SliderPrimitive.Thumb>
       ))}
     </SliderPrimitive.Root>
