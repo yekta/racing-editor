@@ -122,6 +122,9 @@ export default function Sidebar({
         /* overwrite if output.mp4 exists */
         "-y",
 
+        "-threads",
+        "4",
+
         /* ------------ input #0 : base video ------------ */
         "-i",
         baseVideoName,
@@ -147,7 +150,7 @@ export default function Sidebar({
         "-preset",
         "fast",
         "-crf",
-        "32",
+        "23",
         "-pix_fmt",
         "yuv420p",
 

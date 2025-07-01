@@ -79,14 +79,16 @@ export default function Editor() {
       const result = await worker.getFileInfo(file);
       if (result.streams.length > 0) {
         const stream = result.streams[0];
-        console.log(stream);
         setVideoProperties({
           url: URL.createObjectURL(file),
           extension: file.name.split(".").pop() || "mp4",
           width: stream.codec_width,
           height: stream.codec_height,
           frameRate: Number(stream.avg_frame_rate.split("/")[0]),
-          totalFrames: Number(stream.nb_frames),
+          totalFrames: Math.floor(
+            Number(stream.duration) *
+              Number(stream.avg_frame_rate.split("/")[0])
+          ),
           duration: Number(stream.duration),
         });
       }
@@ -135,16 +137,15 @@ export default function Editor() {
     setIsPlaying(false);
     await safePause();
 
-    const currentFrame = Math.round(
-      (videoRef.current.currentTime / videoProperties.duration) *
-        videoProperties.totalFrames
-    );
-    const newFrame = Math.max(0, currentFrame - 1);
-
-    setSliderValue([newFrame]);
-    const newTime =
-      (newFrame / videoProperties.totalFrames) * videoProperties.duration;
-    videoRef.current.currentTime = newTime;
+    setSliderValue((value) => {
+      const newValue = [Math.max(0, value[0] - 1)];
+      if (videoRef.current) {
+        videoRef.current.currentTime =
+          (newValue[0] / videoProperties.totalFrames) *
+          videoProperties.duration;
+      }
+      return newValue;
+    });
   }, [videoProperties, safePause]);
 
   const goToNextFrame = useCallback(async () => {
@@ -154,15 +155,15 @@ export default function Editor() {
     setIsPlaying(false);
     await safePause();
 
-    const currentFrame = Math.round(
-      (videoRef.current.currentTime / videoProperties.duration) *
-        videoProperties.totalFrames
-    );
-    const newFrame = Math.min(videoProperties.totalFrames, currentFrame + 1);
-    setSliderValue([newFrame]);
-    const newTime =
-      (newFrame / videoProperties.totalFrames) * videoProperties.duration;
-    videoRef.current.currentTime = newTime;
+    setSliderValue((value) => {
+      const newValue = [Math.min(videoProperties.totalFrames, value[0] + 1)];
+      if (videoRef.current) {
+        videoRef.current.currentTime =
+          (newValue[0] / videoProperties.totalFrames) *
+          videoProperties.duration;
+      }
+      return newValue;
+    });
   }, [videoProperties, safePause]);
 
   const jumpToPrevIndicator = useCallback(async () => {
@@ -171,10 +172,7 @@ export default function Editor() {
     setIsPlaying(false);
     await safePause();
 
-    const currentFrame = Math.round(
-      (videoRef.current.currentTime / videoProperties.duration) *
-        videoProperties.totalFrames
-    );
+    const currentFrame = sliderValue[0];
 
     const allFrameStamps = [
       frameStamps.start,
@@ -193,7 +191,7 @@ export default function Editor() {
         videoProperties.duration;
       videoRef.current.currentTime = newTime;
     }
-  }, [videoProperties, frameStamps, safePause]);
+  }, [videoProperties, frameStamps, safePause, sliderValue]);
 
   const jumpToNextIndicator = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
@@ -201,10 +199,7 @@ export default function Editor() {
     setIsPlaying(false);
     await safePause();
 
-    const currentFrame = Math.round(
-      (videoRef.current.currentTime / videoProperties.duration) *
-        videoProperties.totalFrames
-    );
+    const currentFrame = sliderValue[0];
 
     const allFrameStamps = [
       frameStamps.start,
@@ -223,7 +218,7 @@ export default function Editor() {
         videoProperties.duration;
       videoRef.current.currentTime = newTime;
     }
-  }, [videoProperties, frameStamps, safePause]);
+  }, [videoProperties, frameStamps, safePause, sliderValue]);
 
   const Indicators_ = useCallback(() => {
     if (!videoProperties) return null;

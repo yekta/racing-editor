@@ -51,11 +51,15 @@ export default function Video({
 
 const pilotNameFontSize = 16;
 const lapTimeFontSize = 32;
-const sectorFontSize = 16;
+const sectorTitleFontSize = 16;
+const sectorValueFontSize = 20;
 const gap = 8;
 const sectorGap = 4;
 const margin = 24;
 const fontFamily = "Geist Mono";
+
+const textColor = "white";
+const mutedTextColor = "rgba(180, 180, 180, 1)";
 
 export function OverlayVideo({
   stageRef,
@@ -94,7 +98,7 @@ export function OverlayVideo({
       (pilotName !== "" ? pilotNameFontSize + gap : 0) +
       lapTimeFontSize +
       (sectors.length > 0
-        ? gap + sectorFontSize + sectorGap + sectorFontSize
+        ? gap + sectorTitleFontSize + sectorGap + sectorValueFontSize
         : 0)
     );
   }, [sectors.length, pilotName]);
@@ -147,7 +151,7 @@ export function OverlayVideo({
                       align="center"
                       text={pilotName !== "" ? pilotName : `Pilot name`}
                       fontSize={pilotNameFontSize}
-                      fill="white"
+                      fill={textColor}
                       shadowEnabled={true}
                       shadowColor="rgba(0, 0, 0, 0.3)"
                       shadowOffsetY={2}
@@ -162,6 +166,12 @@ export function OverlayVideo({
                     align="center"
                     fontSize={lapTimeFontSize}
                     fontStyle="bold"
+                    fill={
+                      frameStamps.start !== null &&
+                      currentFrame < frameStamps.start
+                        ? mutedTextColor
+                        : textColor
+                    }
                     offsetY={
                       -1 * (pilotName !== "" ? pilotNameFontSize + gap : 0)
                     }
@@ -174,7 +184,6 @@ export function OverlayVideo({
                           : videoProperties.totalFrames,
                       frameRate: videoProperties.frameRate,
                     })}
-                    fill="white"
                     shadowEnabled={true}
                     shadowColor="rgba(0, 0, 0, 0.3)"
                     shadowOffsetY={4}
@@ -199,8 +208,25 @@ export function OverlayVideo({
                           width={sectorWidth}
                           key={i}
                           title={`S${i + 1}`}
-                          fontSize={sectorFontSize}
+                          titleFontSize={sectorTitleFontSize}
+                          valueFontSize={sectorValueFontSize}
                           gap={sectorGap}
+                          titleFill={
+                            currentFrame <
+                            (i === 0
+                              ? frameStamps.start!
+                              : frameStamps.sectors[i - 1])
+                              ? mutedTextColor
+                              : textColor
+                          }
+                          valueFill={
+                            currentFrame <
+                            (i === 0
+                              ? frameStamps.start!
+                              : frameStamps.sectors[i - 1])
+                              ? mutedTextColor
+                              : textColor
+                          }
                           value={getDisplayTime({
                             current: currentFrame,
                             start:
@@ -233,14 +259,20 @@ function Sector({
   title,
   value,
   width,
-  fontSize,
+  titleFontSize,
+  valueFontSize,
+  titleFill = "white",
+  valueFill = "white",
   gap,
   offsetX,
 }: {
   title: string;
   value: string;
   width: number;
-  fontSize: number;
+  titleFontSize: number;
+  valueFontSize: number;
+  titleFill?: string;
+  valueFill?: string;
   gap: number;
   offsetX: number;
 }) {
@@ -251,8 +283,8 @@ function Sector({
         text={title}
         align="center"
         verticalAlign="middle"
-        fill="white"
-        fontSize={fontSize}
+        fill={titleFill}
+        fontSize={titleFontSize}
         shadowColor="rgba(0, 0, 0, 0.3)"
         shadowOffsetY={2}
         shadowBlur={4}
@@ -264,10 +296,10 @@ function Sector({
         text={value}
         align="center"
         verticalAlign="middle"
-        fill="white"
+        fill={valueFill}
         fontStyle="bold"
-        fontSize={fontSize}
-        offsetY={-1 * (fontSize + gap)}
+        fontSize={valueFontSize}
+        offsetY={-1 * (titleFontSize + gap)}
         shadowColor="rgba(0, 0, 0, 0.3)"
         shadowOffsetY={2}
         shadowBlur={4}
@@ -311,5 +343,5 @@ function getSectorWidth({
   } else if (seconds >= 60) {
     length = "00:00.00".length;
   }
-  return length * 12 + 12;
+  return length * sectorValueFontSize * (3 / 4) + 12;
 }

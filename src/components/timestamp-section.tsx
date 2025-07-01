@@ -1,4 +1,4 @@
-import { getTimeStringFromFrame } from "@/components/helpers";
+import { getTimeString, getTimeStringFromFrame } from "@/components/helpers";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
 import { cn } from "@/lib/utils";
 import { FlagIcon, MapPinIcon, RocketIcon } from "lucide-react";
@@ -25,10 +25,9 @@ export default function TimestampSection({
           frameRate: videoProperties.frameRate,
         })}
         <span className="px-[0.5ch]">{"/"}</span>
-        {getTimeStringFromFrame({
-          frame: videoProperties.totalFrames,
-          totalFrames: videoProperties.totalFrames,
-          frameRate: videoProperties.frameRate,
+        {getTimeString({
+          time: videoProperties.duration,
+          maxTime: videoProperties.duration,
         })}{" "}
         <span className="text-muted-foreground">
           (
