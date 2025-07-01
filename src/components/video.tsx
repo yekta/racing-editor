@@ -1,39 +1,30 @@
 import { getTimeStringFromFrame } from "@/components/helpers";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
-import { cn } from "@/lib/utils";
-import { Player, PlayerRef } from "@remotion/player";
-import { RefObject, useCallback } from "react";
-import { AbsoluteFill, useCurrentFrame } from "remotion";
+import { RefObject, useMemo } from "react";
+import { Group, Layer, Stage, Text } from "react-konva";
+import AutoSizer from "react-virtualized-auto-sizer";
 
 type TProps = {
   videoRef: RefObject<HTMLVideoElement | null>;
-  overlayVideoRef: RefObject<PlayerRef | null>;
   videoProperties: TVideoProperties;
   frameStamps: TFrameStamps;
   onPlay: () => void;
   onPause: () => void;
   onTimeUpdate: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
+  sliderValue: number[];
+  pilotName: string;
 };
 
 export default function Video({
   videoRef,
-  overlayVideoRef,
   videoProperties,
   frameStamps,
   onPlay,
   onPause,
   onTimeUpdate,
+  sliderValue,
+  pilotName,
 }: TProps) {
-  const OverlayVideo_ = useCallback(
-    () => (
-      <OverlayVideo
-        frameStamps={frameStamps}
-        videoProperties={videoProperties}
-      />
-    ),
-    [frameStamps, videoProperties]
-  );
-
   return (
     <div className="w-full h-full relative">
       <video
@@ -44,167 +35,233 @@ export default function Video({
         onPause={onPause}
         onTimeUpdate={onTimeUpdate}
       />
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          margin: "auto",
-          aspectRatio: `${videoProperties.width} / ${videoProperties.height}`,
-          maxHeight: "100%",
-          maxWidth: "100%",
-        }}
-      >
-        <Player
-          ref={overlayVideoRef}
-          component={OverlayVideo_}
-          durationInFrames={videoProperties.totalFrames}
-          compositionWidth={videoProperties.width}
-          compositionHeight={videoProperties.height}
-          fps={videoProperties.frameRate}
-          style={{
-            width: "100%",
-          }}
-        />
-      </div>
+      <OverlayVideo
+        frameStamps={frameStamps}
+        videoProperties={videoProperties}
+        sliderValue={sliderValue}
+        pilotName={pilotName}
+      />
     </div>
   );
 }
 
+const pilotNameFontSize = 16;
+const lapTimeFontSize = 32;
+const sectorFontSize = 16;
+const gap = 8;
+const sectorGap = 4;
+const margin = 16;
+const fontFamily = "Geist Mono";
+
 function OverlayVideo({
   frameStamps,
   videoProperties,
+  sliderValue,
+  pilotName,
 }: {
   frameStamps: TFrameStamps;
   videoProperties: TVideoProperties;
+  sliderValue: number[];
+  pilotName: string;
 }) {
-  const frame = useCurrentFrame();
+  const currentFrame = useMemo(() => sliderValue[0] || 0, [sliderValue]);
+  const sectorWidth = useMemo(
+    () =>
+      getSectorWidth({
+        totalFrames: videoProperties.totalFrames,
+        frameRate: videoProperties.frameRate,
+      }),
+    [videoProperties.totalFrames, videoProperties.frameRate]
+  );
+
+  const sectors = useMemo(() => {
+    return [
+      ...frameStamps.sectors,
+      ...(frameStamps.sectors.length >= 1 && frameStamps.end !== null
+        ? [frameStamps.end]
+        : []),
+    ];
+  }, [frameStamps.sectors, frameStamps.end]);
+
+  const divHeight = useMemo(() => {
+    return (
+      pilotNameFontSize +
+      gap +
+      lapTimeFontSize +
+      (sectors.length > 0
+        ? gap + sectorFontSize + sectorGap + sectorFontSize
+        : 0)
+    );
+  }, [sectors.length]);
 
   return (
-    <AbsoluteFill
-      style={{
-        textAlign: "center",
-        justifyContent: "end",
-        alignItems: "center",
-        padding: "1rem",
-      }}
-    >
-      <div className="rounded-md bg-background/50 overflow-hidden">
-        <p className="bg-background/50 w-full text-left px-4 text-xl font-semibold py-2">
-          Pilot Name
-        </p>
-        <p
-          data-before={
-            frameStamps.start !== null && frame < frameStamps.start
-              ? true
-              : undefined
-          }
-          data-after={
-            frameStamps.end !== null && frame >= frameStamps.end
-              ? true
-              : undefined
-          }
-          className="font-bold text-3xl px-4 py-2 data-before:text-muted-foreground data-after:text-success data-before:data-after:text-success"
-        >
-          {getDisplayTime({
-            current: frame,
-            start: frameStamps.start !== null ? frameStamps.start : 0,
-            end:
-              frameStamps.end !== null
-                ? frameStamps.end
-                : videoProperties.totalFrames,
-            frameRate: videoProperties.frameRate,
-          })}
-        </p>
-        {frameStamps.sectors.length > 0 && (
-          <div className="bg-background/50 flex text-lg leading-tight">
-            {frameStamps.sectors.map((sector, i) => (
-              <Sector
-                key={i}
-                data-before={
-                  frame <
-                  (i === 0
-                    ? frameStamps.start || 0
-                    : frameStamps.sectors[i - 1])
-                    ? true
-                    : undefined
-                }
-                data-after={frame >= sector ? true : undefined}
-                title={`S${i + 1}`}
-                value={getDisplayTime({
-                  current: frame,
-                  start:
-                    i === 0 ? frameStamps.start! : frameStamps.sectors[i - 1],
-                  end: sector,
-                  frameRate: videoProperties.frameRate,
-                })}
-                className="group/sector"
-                classNameValue="group-data-before/sector:text-muted-foreground group-data-after/sector:text-warning group-data-before/sector:data-after/sector:text-warning"
-                classNameTitle="text-foreground group-data-before/sector:text-muted-foreground"
-              />
-            ))}
-            {frameStamps.end !== null && (
-              <Sector
-                title={`S${frameStamps.sectors.length + 1}`}
-                value={getDisplayTime({
-                  current: frame,
-                  start: frameStamps.sectors[frameStamps.sectors.length - 1],
-                  end:
-                    frameStamps.end !== null
-                      ? frameStamps.end
-                      : videoProperties.totalFrames,
-                  frameRate: videoProperties.frameRate,
-                })}
-                data-before={
-                  frame < frameStamps.sectors[frameStamps.sectors.length - 1]
-                    ? true
-                    : undefined
-                }
-                data-after={frame >= frameStamps.end ? true : undefined}
-                className="group/sector"
-                classNameValue="group-data-before/sector:text-muted-foreground group-data-after/sector:text-warning group-data-before/sector:data-after/sector:text-warning"
-                classNameTitle="group-data-before/sector:text-muted-foreground text-foreground"
-              />
-            )}
-          </div>
-        )}
-      </div>
-    </AbsoluteFill>
+    <div className="w-full h-full absolute z-10 left-0 top-0">
+      <AutoSizer>
+        {({ height, width }) => {
+          const canvasWidth =
+            videoProperties.width / videoProperties.height >= width / height
+              ? width
+              : height * (videoProperties.width / videoProperties.height);
+
+          const canvasHeight =
+            videoProperties.width / videoProperties.height < width / height
+              ? height
+              : width / (videoProperties.width / videoProperties.height);
+
+          const marginTop =
+            videoProperties.width / videoProperties.height >= width / height
+              ? height / 2 -
+                width / (videoProperties.width / videoProperties.height) / 2
+              : 0;
+
+          const marginLeft =
+            videoProperties.width / videoProperties.height < width / height
+              ? width / 2 -
+                (height * (videoProperties.width / videoProperties.height)) / 2
+              : 0;
+
+          return (
+            <Stage
+              style={{
+                marginTop,
+                marginLeft,
+                width: canvasWidth,
+                height: canvasHeight,
+              }}
+              className="border border-red-300 overflow-hidden"
+              width={videoProperties.width}
+              height={videoProperties.height}
+            >
+              <Layer width={canvasWidth} height={canvasHeight}>
+                <Group y={canvasHeight - divHeight - margin}>
+                  <Text
+                    width={canvasWidth}
+                    height={canvasHeight}
+                    align="center"
+                    text={pilotName !== "" ? pilotName : `Pilot name`}
+                    fontSize={pilotNameFontSize}
+                    fill="white"
+                    shadowEnabled={true}
+                    shadowColor="rgba(0, 0, 0, 0.3)"
+                    shadowOffsetY={2}
+                    shadowBlur={4}
+                    shadowOffsetX={0}
+                    fontFamily={fontFamily}
+                  />
+                  <Text
+                    width={canvasWidth}
+                    height={canvasHeight}
+                    align="center"
+                    fontSize={lapTimeFontSize}
+                    fontStyle="bold"
+                    offsetY={-1 * (pilotNameFontSize + gap)}
+                    text={getDisplayTime({
+                      current: currentFrame,
+                      start: frameStamps.start !== null ? frameStamps.start : 0,
+                      end:
+                        frameStamps.end !== null
+                          ? frameStamps.end
+                          : videoProperties.totalFrames,
+                      frameRate: videoProperties.frameRate,
+                    })}
+                    fill="white"
+                    shadowEnabled={true}
+                    shadowColor="rgba(0, 0, 0, 0.3)"
+                    shadowOffsetY={4}
+                    shadowBlur={8}
+                    shadowOffsetX={0}
+                    fontFamily={fontFamily}
+                  />
+                  {sectors.length > 0 && (
+                    <Group
+                      x={canvasWidth / 2 - (sectorWidth * sectors.length) / 2}
+                      offsetY={
+                        -1 * (pilotNameFontSize + lapTimeFontSize + gap * 2)
+                      }
+                      className="bg-background/50 flex text-lg leading-tight"
+                    >
+                      {sectors.map((sector, i) => (
+                        <Sector
+                          offsetX={-1 * i * sectorWidth}
+                          width={sectorWidth}
+                          key={i}
+                          title={`S${i + 1}`}
+                          fontSize={sectorFontSize}
+                          gap={sectorGap}
+                          value={getDisplayTime({
+                            current: currentFrame,
+                            start:
+                              i === 0
+                                ? frameStamps.start!
+                                : frameStamps.sectors[i - 1],
+                            end:
+                              i === frameStamps.sectors.length
+                                ? frameStamps.end !== null
+                                  ? frameStamps.end
+                                  : videoProperties.totalFrames
+                                : sector,
+                            frameRate: videoProperties.frameRate,
+                          })}
+                        />
+                      ))}
+                    </Group>
+                  )}
+                </Group>
+              </Layer>
+            </Stage>
+          );
+        }}
+      </AutoSizer>
+    </div>
   );
 }
 
 function Sector({
   title,
   value,
-  className,
-  classNameValue,
-  classNameTitle,
-  ...rest
+  width,
+  fontSize,
+  gap,
+  offsetX,
 }: {
   title: string;
   value: string;
-  classNameValue?: string;
-  classNameTitle?: string;
-} & React.HTMLAttributes<HTMLDivElement>) {
+  width: number;
+  fontSize: number;
+  gap: number;
+  offsetX: number;
+}) {
   return (
-    <div
-      className={cn("flex flex-col flex-1 px-4 py-2 gap-0.5", className)}
-      {...rest}
-    >
-      <p
-        className={cn(
-          "font-normal text-muted-foreground leading-tight",
-          classNameTitle
-        )}
-      >
-        {title}
-      </p>
-      <p className={cn("font-semibold leading-tight", classNameValue)}>
-        {value}
-      </p>
-    </div>
+    <Group offsetX={offsetX} width={width}>
+      <Text
+        width={width}
+        text={title}
+        align="center"
+        verticalAlign="middle"
+        fill="white"
+        fontSize={fontSize}
+        shadowColor="rgba(0, 0, 0, 0.3)"
+        shadowOffsetY={2}
+        shadowBlur={4}
+        shadowOffsetX={0}
+        fontFamily={fontFamily}
+      />
+      <Text
+        width={width}
+        text={value}
+        align="center"
+        verticalAlign="middle"
+        fill="white"
+        fontStyle="bold"
+        fontSize={fontSize}
+        offsetY={-1 * (fontSize + gap)}
+        shadowColor="rgba(0, 0, 0, 0.3)"
+        shadowOffsetY={2}
+        shadowBlur={4}
+        shadowOffsetX={0}
+        fontFamily={fontFamily}
+      />
+    </Group>
   );
 }
 
@@ -225,4 +282,21 @@ function getDisplayTime({
     totalFrames: end - start,
     frameRate: frameRate,
   });
+}
+
+function getSectorWidth({
+  totalFrames,
+  frameRate,
+}: {
+  totalFrames: number;
+  frameRate: number;
+}) {
+  let length = "00:00".length;
+  const seconds = totalFrames / frameRate;
+  if (seconds >= 3600) {
+    length = "00:00:00.00".length;
+  } else if (seconds >= 60) {
+    length = "00:00.00".length;
+  }
+  return length * 12 + 12;
 }

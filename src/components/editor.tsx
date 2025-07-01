@@ -10,7 +10,6 @@ import { TFrameStamps, TVideoProperties } from "@/components/types";
 import { Slider } from "@/components/ui/slider";
 import Video from "@/components/video";
 import useAppHotkeys from "@/lib/use-app-hotkeys";
-import { PlayerRef } from "@remotion/player";
 import { FFprobeWorker } from "ffprobe-wasm";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -30,13 +29,12 @@ export default function Editor() {
 
   const animationFrameRef = useRef<number>(0);
   const videoRef = useRef<HTMLVideoElement | null>(null);
-  const overlayVideoRef = useRef<PlayerRef>(null);
   const playPromiseRef = useRef<Promise<void> | null>(null);
+  const [pilotName, setPilotName] = useState("");
 
   // Safe play function that handles promises properly
   const safePlay = useCallback(async () => {
     if (!videoRef.current) return;
-    if (!overlayVideoRef.current) return;
 
     try {
       // Wait for any pending play promise to resolve
@@ -57,7 +55,6 @@ export default function Editor() {
   // Safe pause function
   const safePause = useCallback(async () => {
     if (!videoRef.current) return;
-    if (!overlayVideoRef.current) return;
 
     try {
       // Wait for any pending play promise to resolve first
@@ -254,10 +251,6 @@ export default function Editor() {
     };
   }, [isPlaying, videoProperties, updateSliderPosition, safePlay, safePause]);
 
-  useEffect(() => {
-    overlayVideoRef.current?.seekTo(sliderValue[0]);
-  }, [sliderValue]);
-
   useAppHotkeys({
     togglePlayPause,
     goToPrevFrame,
@@ -280,12 +273,13 @@ export default function Editor() {
             <div className="w-full flex-1 min-h-0 overflow-hidden flex justify-center">
               <Video
                 videoRef={videoRef}
-                overlayVideoRef={overlayVideoRef}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
                 onTimeUpdate={handleTimeUpdate}
                 videoProperties={videoProperties}
                 frameStamps={frameStamps}
+                sliderValue={sliderValue}
+                pilotName={pilotName}
               />
             </div>
             <div className="w-full flex flex-col border-t p-4">
@@ -300,7 +294,6 @@ export default function Editor() {
                   <TimestampSection
                     videoProperties={videoProperties}
                     sliderValue={sliderValue}
-                    videoRef={videoRef}
                     frameStamps={frameStamps}
                     isPlaying={isPlaying}
                   />
@@ -362,6 +355,8 @@ export default function Editor() {
             </div>
           </div>
           <Sidebar
+            pilotName={pilotName}
+            onPilotNameChange={setPilotName}
             frameStamps={frameStamps}
             setFrameStamps={setFrameStamps}
             videoProperties={videoProperties}

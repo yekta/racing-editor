@@ -1,11 +1,10 @@
-import { getTimeString } from "@/components/helpers";
+import { getTimeStringFromFrame } from "@/components/helpers";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
 import { cn } from "@/lib/utils";
 import { FlagIcon, MapPinIcon, RocketIcon } from "lucide-react";
 
 type TProps = {
   videoProperties: TVideoProperties;
-  videoRef: React.RefObject<HTMLVideoElement | null>;
   frameStamps: TFrameStamps;
   sliderValue: number[];
   isPlaying: boolean;
@@ -15,19 +14,21 @@ export default function TimestampSection({
   videoProperties,
   sliderValue,
   frameStamps,
-  videoRef,
   isPlaying,
 }: TProps) {
   return (
     <div className="w-full -mt-1 px-1 flex items-center gap-1.5">
       <p className="shrink min-w-0 leading-tight px-1">
-        {getTimeString({
-          time: videoRef.current?.currentTime || 0,
-          maxTime: videoProperties.totalFrames / videoProperties.frameRate,
+        {getTimeStringFromFrame({
+          frame: sliderValue[0],
+          totalFrames: videoProperties.totalFrames,
+          frameRate: videoProperties.frameRate,
         })}
         <span className="px-[0.5ch]">{"/"}</span>
-        {getTimeString({
-          time: videoProperties.totalFrames / videoProperties.frameRate,
+        {getTimeStringFromFrame({
+          frame: videoProperties.totalFrames,
+          totalFrames: videoProperties.totalFrames,
+          frameRate: videoProperties.frameRate,
         })}{" "}
         <span className="text-muted-foreground">
           (

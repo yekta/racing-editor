@@ -1,6 +1,7 @@
 import { getTimeStringFromFrame } from "@/components/helpers";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
@@ -27,12 +28,16 @@ type TProps = {
   frameStamps: TFrameStamps;
   setFrameStamps: Dispatch<SetStateAction<TFrameStamps>>;
   videoProperties: TVideoProperties;
+  pilotName: string;
+  onPilotNameChange: (value: string) => void;
 };
 
 export default function Sidebar({
   frameStamps,
   setFrameStamps,
   videoProperties,
+  pilotName,
+  onPilotNameChange,
 }: TProps) {
   const [isFfmpegLoaded, setIsFfmpegLoaded] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
@@ -98,7 +103,13 @@ export default function Sidebar({
 
   return (
     <div className="w-80 border-l overflow-hidden flex flex-col relative">
-      <div className="flex-1 flex flex-col overflow-auto px-5 py-4 gap-5">
+      <div className="flex-1 flex flex-col overflow-auto px-5 py-5 gap-5">
+        <Input
+          className="w-full"
+          value={pilotName}
+          onChange={(e) => onPilotNameChange(e.target.value)}
+          placeholder="Pilot name"
+        />
         <Section
           title="Lap Time"
           frame={
