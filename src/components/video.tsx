@@ -125,7 +125,9 @@ function OverlayVideo({
                 key={i}
                 data-before={
                   frame <
-                  (i === 0 ? frameStamps.start! : frameStamps.sectors[i - 1])
+                  (i === 0
+                    ? frameStamps.start || 0
+                    : frameStamps.sectors[i - 1])
                     ? true
                     : undefined
                 }
@@ -148,7 +150,10 @@ function OverlayVideo({
                 value={getDisplayTime({
                   current: frame,
                   start: frameStamps.sectors[frameStamps.sectors.length - 1],
-                  end: frameStamps.end!,
+                  end:
+                    frameStamps.end !== null
+                      ? frameStamps.end
+                      : videoProperties.totalFrames,
                   frameRate: videoProperties.frameRate,
                 })}
                 data-before={
