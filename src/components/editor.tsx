@@ -8,13 +8,14 @@ import Sidebar from "@/components/sidebar";
 import TimestampSection from "@/components/timestamp-section";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
 import { Slider } from "@/components/ui/slider";
+import Video from "@/components/video";
 import useAppHotkeys from "@/lib/use-app-hotkeys";
 import { FFprobeWorker } from "ffprobe-wasm";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const worker = new FFprobeWorker();
 
-export default function Player() {
+export default function Editor() {
   const [videoProperties, setVideoProperties] =
     useState<TVideoProperties | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -51,7 +52,6 @@ export default function Player() {
     }
   };
 
-  // Update slider as video plays
   const handleTimeUpdate = () => {
     if (videoRef.current && videoProperties && !isDragging) {
       const currentTime = videoRef.current.currentTime;
@@ -221,13 +221,12 @@ export default function Player() {
         <div className="w-full flex flex-1 overflow-hidden">
           <div className="w-full flex flex-col flex-1 overflow-hidden min-h-0">
             <div className="w-full flex-1 min-h-0 overflow-hidden flex justify-center">
-              <video
-                className="w-full h-full object-contain"
-                ref={videoRef}
-                src={videoProperties.url}
+              <Video
+                videoRef={videoRef}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
                 onTimeUpdate={handleTimeUpdate}
+                videoProperties={videoProperties}
               />
             </div>
             <div className="w-full flex flex-col border-t p-4">
