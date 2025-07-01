@@ -302,6 +302,7 @@ export default function Editor() {
                     sliderValue={sliderValue}
                     videoRef={videoRef}
                     frameStamps={frameStamps}
+                    isPlaying={isPlaying}
                   />
                   <Slider
                     value={sliderValue}
@@ -354,6 +355,7 @@ export default function Editor() {
                     frameStamps={frameStamps}
                     setFrameStamps={setFrameStamps}
                     sliderValue={sliderValue}
+                    isPlaying={isPlaying}
                   />
                 </div>
               </div>

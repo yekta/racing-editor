@@ -92,7 +92,7 @@ function OverlayVideo({
       }}
     >
       <div className="rounded-md bg-background/50 overflow-hidden">
-        <p className="bg-background/50 w-full text-left px-3 text-xl font-bold py-2">
+        <p className="bg-background/50 w-full text-left px-4 text-xl font-semibold py-2">
           Pilot Name
         </p>
         <p
@@ -106,7 +106,7 @@ function OverlayVideo({
               ? true
               : undefined
           }
-          className="font-bold text-3xl px-3 py-2 data-before:text-muted-foreground data-after:text-success data-before:data-after:text-success"
+          className="font-bold text-3xl px-4 py-2 data-before:text-muted-foreground data-after:text-success data-before:data-after:text-success"
         >
           {getDisplayTime({
             current: frame,
@@ -132,8 +132,6 @@ function OverlayVideo({
                     : undefined
                 }
                 data-after={frame >= sector ? true : undefined}
-                className="group/sector"
-                classNameValue="group-data-before/sector:text-muted-foreground group-data-after/sector:text-success group-data-before/sector:data-after/sector:text-success"
                 title={`S${i + 1}`}
                 value={getDisplayTime({
                   current: frame,
@@ -142,6 +140,9 @@ function OverlayVideo({
                   end: sector,
                   frameRate: videoProperties.frameRate,
                 })}
+                className="group/sector"
+                classNameValue="group-data-before/sector:text-muted-foreground group-data-after/sector:text-warning group-data-before/sector:data-after/sector:text-warning"
+                classNameTitle="text-foreground group-data-before/sector:text-muted-foreground"
               />
             ))}
             {frameStamps.end !== null && (
@@ -163,7 +164,8 @@ function OverlayVideo({
                 }
                 data-after={frame >= frameStamps.end ? true : undefined}
                 className="group/sector"
-                classNameValue="group-data-before/sector:text-muted-foreground group-data-after/sector:text-success group-data-before/sector:data-after/sector:text-success"
+                classNameValue="group-data-before/sector:text-muted-foreground group-data-after/sector:text-warning group-data-before/sector:data-after/sector:text-warning"
+                classNameTitle="group-data-before/sector:text-muted-foreground text-foreground"
               />
             )}
           </div>
@@ -178,19 +180,30 @@ function Sector({
   value,
   className,
   classNameValue,
+  classNameTitle,
   ...rest
 }: {
   title: string;
   value: string;
   classNameValue?: string;
+  classNameTitle?: string;
 } & React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn("flex flex-col flex-1 px-4 py-2 gap-0.5", className)}
       {...rest}
     >
-      <p className="font-medium text-muted-foreground leading-tight">{title}</p>
-      <p className={cn("font-bold leading-tight", classNameValue)}>{value}</p>
+      <p
+        className={cn(
+          "font-normal text-muted-foreground leading-tight",
+          classNameTitle
+        )}
+      >
+        {title}
+      </p>
+      <p className={cn("font-semibold leading-tight", classNameValue)}>
+        {value}
+      </p>
     </div>
   );
 }

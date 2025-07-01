@@ -7,12 +7,14 @@ type TProps = {
   frameStamps: TFrameStamps;
   setFrameStamps: Dispatch<SetStateAction<TFrameStamps>>;
   sliderValue: number[];
+  isPlaying: boolean;
 };
 
 export default function ButtonsBar({
   frameStamps,
   setFrameStamps,
   sliderValue,
+  isPlaying,
 }: TProps) {
   return (
     <div className="w-full gap-2 flex flex-wrap">
@@ -53,6 +55,7 @@ export default function ButtonsBar({
         className="font-extrabold px-3 py-1.5 rounded-sm"
         type="button"
         onClick={() => {
+          if (isPlaying && frameStamps.sectors.includes(sliderValue[0])) return;
           if (frameStamps.sectors.includes(sliderValue[0])) {
             setFrameStamps((prev) => ({
               ...prev,
@@ -62,12 +65,14 @@ export default function ButtonsBar({
           }
           setFrameStamps((prev) => ({
             ...prev,
-            sectors: [...prev.sectors, sliderValue[0]].sort((a, b) => a - b),
+            sectors: Array.from(
+              new Set([...prev.sectors, sliderValue[0]])
+            ).sort((a, b) => a - b),
           }));
         }}
       >
         <MapPinIcon className="size-4.5 -ml-0.75" />
-        {frameStamps.sectors.includes(sliderValue[0])
+        {frameStamps.sectors.includes(sliderValue[0]) && !isPlaying
           ? "Remove Sector"
           : "Add Sector"}
       </Button>

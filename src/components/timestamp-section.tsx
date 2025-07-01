@@ -8,6 +8,7 @@ type TProps = {
   videoRef: React.RefObject<HTMLVideoElement | null>;
   frameStamps: TFrameStamps;
   sliderValue: number[];
+  isPlaying: boolean;
 };
 
 export default function TimestampSection({
@@ -15,6 +16,7 @@ export default function TimestampSection({
   sliderValue,
   frameStamps,
   videoRef,
+  isPlaying,
 }: TProps) {
   return (
     <div className="w-full -mt-1 px-1 flex items-center gap-1.5">
@@ -36,32 +38,35 @@ export default function TimestampSection({
           {videoProperties.totalFrames})
         </span>
       </p>
-      <div className="flex flex-wrap gap-1.5">
-        {frameStamps.start !== null && sliderValue[0] === frameStamps.start && (
-          <Chip
-            text="Start"
-            Icon={RocketIcon}
-            className="bg-progress/15 text-progress"
-          />
-        )}
-        {frameStamps.end !== null && sliderValue[0] === frameStamps.end && (
-          <Chip
-            text="End"
-            Icon={FlagIcon}
-            className="bg-success/15 text-success"
-          />
-        )}
-        {frameStamps.sectors.length > 0 &&
-          frameStamps.sectors.includes(sliderValue[0]) && (
+      {!isPlaying && (
+        <div className="flex flex-wrap gap-1.5">
+          {frameStamps.start !== null &&
+            sliderValue[0] === frameStamps.start && (
+              <Chip
+                text="Start"
+                Icon={RocketIcon}
+                className="bg-progress/15 text-progress"
+              />
+            )}
+          {frameStamps.end !== null && sliderValue[0] === frameStamps.end && (
             <Chip
-              text={`Sector ${
-                frameStamps.sectors.findIndex((i) => i === sliderValue[0]) + 1
-              }`}
-              Icon={MapPinIcon}
-              className="bg-warning/15 text-warning"
+              text="End"
+              Icon={FlagIcon}
+              className="bg-success/15 text-success"
             />
           )}
-      </div>
+          {frameStamps.sectors.length > 0 &&
+            frameStamps.sectors.includes(sliderValue[0]) && (
+              <Chip
+                text={`Sector ${
+                  frameStamps.sectors.findIndex((i) => i === sliderValue[0]) + 1
+                }`}
+                Icon={MapPinIcon}
+                className="bg-warning/15 text-warning"
+              />
+            )}
+        </div>
+      )}
     </div>
   );
 }
