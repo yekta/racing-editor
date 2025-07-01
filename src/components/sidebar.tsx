@@ -5,11 +5,14 @@ import { cn } from "@/lib/utils";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
 import {
+  ClockIcon,
   FlagIcon,
   MapPinIcon,
   RocketIcon,
+  SquareDashedIcon,
   TimerIcon,
   Trash2Icon,
+  TvIcon,
 } from "lucide-react";
 import {
   Dispatch,
@@ -175,6 +178,29 @@ export default function Sidebar({
             Icon={FlagIcon}
           />
         )}
+        <div className="w-[calc(100%+1rem)] -mx-2 h-px bg-border rounded-full" />
+        <Section
+          title="Resolution"
+          text={`${videoProperties.width} x ${videoProperties.height}`}
+          Icon={SquareDashedIcon}
+          videoProperties={videoProperties}
+        />
+        <Section
+          title="Frame Rate"
+          text={`${videoProperties.frameRate}`}
+          Icon={TvIcon}
+          videoProperties={videoProperties}
+        />
+        <Section
+          title="Duration"
+          text={getTimeStringFromFrame({
+            frame: videoProperties.totalFrames,
+            frameRate: videoProperties.frameRate,
+            totalFrames: videoProperties.totalFrames,
+          })}
+          videoProperties={videoProperties}
+          Icon={ClockIcon}
+        />
       </div>
       <div className="w-full p-4 border-t">
         <Button
@@ -195,6 +221,7 @@ export default function Sidebar({
 
 function Section({
   title,
+  text,
   frame,
   videoProperties,
   className,
@@ -203,13 +230,21 @@ function Section({
   Icon,
 }: {
   title: string;
-  frame: number | null;
   videoProperties: TVideoProperties;
   className?: string;
   classNameParagraph?: string;
   onClickDelete?: () => void;
   Icon: FC<{ className?: string }>;
-}) {
+} & (
+  | {
+      text: string;
+      frame?: never;
+    }
+  | {
+      text?: never;
+      frame: number | null;
+    }
+)) {
   return (
     <div className={cn("w-full flex items-end", className)}>
       <div className="w-full flex flex-col gap-1">
@@ -219,17 +254,19 @@ function Section({
             {title}
           </h3>
         </div>
-
         <p
           className={cn(
             "w-full text-xl font-bold leading-tight",
             classNameParagraph
           )}
         >
-          {frame !== null
+          {text !== undefined
+            ? text
+            : frame !== null
             ? getTimeStringFromFrame({
                 frame,
                 frameRate: videoProperties.frameRate,
+                totalFrames: videoProperties.totalFrames,
               })
             : "N/A"}
         </p>

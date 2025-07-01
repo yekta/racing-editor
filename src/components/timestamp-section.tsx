@@ -19,11 +19,14 @@ export default function TimestampSection({
   return (
     <div className="w-full -mt-1 px-1 flex items-center gap-1.5">
       <p className="shrink min-w-0 leading-tight px-1">
-        {getTimeString(videoRef.current?.currentTime || 0)}
+        {getTimeString({
+          time: videoRef.current?.currentTime || 0,
+          maxTime: videoProperties.totalFrames / videoProperties.frameRate,
+        })}
         <span className="px-[0.5ch]">{"/"}</span>
-        {getTimeString(
-          videoProperties.totalFrames / videoProperties.frameRate
-        )}{" "}
+        {getTimeString({
+          time: videoProperties.totalFrames / videoProperties.frameRate,
+        })}{" "}
         <span className="text-muted-foreground">
           (
           {sliderValue[0]
