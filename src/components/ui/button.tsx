@@ -16,6 +16,8 @@ const buttonVariants = cva(
           "bg-success text-background hover:bg-success/80 focus-visible:ring-success/20",
         warning:
           "bg-warning text-background hover:bg-warning/80 focus-visible:ring-warning/20",
+        progress:
+          "bg-progress text-background hover:bg-progress/80 focus-visible:ring-progress/20",
         outline:
           "border bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
         secondary:

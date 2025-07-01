@@ -10,12 +10,12 @@ import {
   ChevronLeft,
   ChevronRight,
   FlagIcon,
-  MapPin,
+  MapPinIcon,
   PauseIcon,
   PlayIcon,
   RocketIcon,
 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { FC, useCallback, useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 
 const worker = new FFprobeWorker();
@@ -121,6 +121,42 @@ export default function Player() {
       (newFrame / videoProperties.totalFrames) * videoProperties.duration;
     videoRef.current.currentTime = newTime;
   }, [videoProperties]);
+
+  const Indicators = useCallback(() => {
+    if (!videoProperties) return null;
+    return (
+      <>
+        {frameStamps.start !== null && (
+          <Indicator
+            frame={frameStamps.start}
+            videoProperties={videoProperties}
+            className="bg-progress"
+            Icon={RocketIcon}
+            classNameIcon="bg-progress"
+          />
+        )}
+        {frameStamps.end !== null && (
+          <Indicator
+            frame={frameStamps.end}
+            videoProperties={videoProperties}
+            className="bg-success"
+            Icon={FlagIcon}
+            classNameIcon="bg-success"
+          />
+        )}
+        {frameStamps.sectors.map((sector, index) => (
+          <Indicator
+            key={index}
+            frame={sector}
+            videoProperties={videoProperties}
+            className="bg-warning"
+            Icon={MapPinIcon}
+            classNameIcon="bg-warning"
+          />
+        ))}
+      </>
+    );
+  }, [videoProperties, frameStamps]);
 
   useEffect(() => {
     if (videoRef.current) {
@@ -238,28 +274,6 @@ export default function Player() {
                     </span>
                   </p>
                   <div className="flex-1 relative">
-                    {frameStamps.start !== null && (
-                      <Indicator
-                        frame={frameStamps.start}
-                        videoProperties={videoProperties}
-                        className="bg-destructive"
-                      />
-                    )}
-                    {frameStamps.end !== null && (
-                      <Indicator
-                        frame={frameStamps.end}
-                        videoProperties={videoProperties}
-                        className="bg-success"
-                      />
-                    )}
-                    {frameStamps.sectors.map((sector, index) => (
-                      <Indicator
-                        key={index}
-                        frame={sector}
-                        videoProperties={videoProperties}
-                        className="bg-warning"
-                      />
-                    ))}
                     <Slider
                       value={sliderValue}
                       onKeyDown={(e) => {
@@ -280,11 +294,12 @@ export default function Player() {
                       min={0}
                       max={videoProperties.totalFrames}
                       step={1}
+                      Indicators={Indicators}
                     />
                   </div>
                   <div className="w-full gap-2 flex flex-wrap">
                     <Button
-                      variant="destructive"
+                      variant="progress"
                       className="font-extrabold px-3 py-1.5 rounded-sm"
                       onClick={() => {
                         setFrameStamps((prev) => ({
@@ -336,7 +351,7 @@ export default function Player() {
                         }));
                       }}
                     >
-                      <MapPin className="size-4.5 -ml-0.75" />
+                      <MapPinIcon className="size-4.5 -ml-0.75" />
                       {frameStamps.sectors.includes(sliderValue[0])
                         ? "Remove Sector"
                         : "Add Sector"}
@@ -382,10 +397,14 @@ function Indicator({
   frame,
   videoProperties,
   className,
+  Icon,
+  classNameIcon,
 }: {
   frame: number;
   videoProperties: TVideoProperties;
   className?: string;
+  Icon: FC<{ className?: string }>;
+  classNameIcon?: string;
 }) {
   return (
     <div
@@ -393,10 +412,19 @@ function Indicator({
         left: `${(frame / videoProperties.totalFrames) * 100}%`,
       }}
       className={cn(
-        "bg-foreground ring-2 ring-background absolute top-1/2 -translate-y-1/2 h-[calc(100%+0.75rem)] rounded-full w-1 -translate-x-1/2 pointer-events-none",
+        "bg-foreground absolute top-1/2 -translate-y-1/2 h-full w-0.5 -translate-x-1/2 pointer-events-none",
         className
       )}
-    />
+    >
+      <div
+        className={cn(
+          "absolute top-1/2 p-0.75 -translate-y-1/2 size-5 left-0 -translate-x-1/2 text-background rounded-sm",
+          classNameIcon
+        )}
+      >
+        <Icon className="size-full" />
+      </div>
+    </div>
   );
 }
 

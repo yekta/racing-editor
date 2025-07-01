@@ -11,8 +11,11 @@ function Slider({
   value,
   min = 0,
   max = 100,
+  Indicators,
   ...props
-}: React.ComponentProps<typeof SliderPrimitive.Root>) {
+}: React.ComponentProps<typeof SliderPrimitive.Root> & {
+  Indicators: React.FC<{ className?: string }>;
+}) {
   const _values = React.useMemo(
     () =>
       Array.isArray(value)
@@ -45,17 +48,18 @@ function Slider({
         <SliderPrimitive.Range
           data-slot="slider-range"
           className={cn(
-            "bg-foreground/25 absolute data-[orientation=horizontal]:h-12 data-[orientation=vertical]:w-full"
+            "bg-destructive/10 absolute data-[orientation=horizontal]:h-12 data-[orientation=vertical]:w-full"
           )}
         />
       </SliderPrimitive.Track>
+      <Indicators />
       {Array.from({ length: _values.length }, (_, index) => (
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
-          className="bg-foreground ring-ring/50 w-[2px] h-13 rounded-full block focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+          className="bg-destructive relative ring-ring/50 w-0.5 h-12 rounded-full block focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
         >
-          <div className="w-1.5 h-6 absolute left-1/2 top-1/2 -translate-y-1/2 rounded-full -translate-x-1/2 bg-foreground" />
+          <div className="w-2 h-3 absolute left-1/2 top-0 -translate-y-1/2 rounded-t-xs rounded-b-sm -translate-x-1/2 bg-destructive" />
         </SliderPrimitive.Thumb>
       ))}
     </SliderPrimitive.Root>
