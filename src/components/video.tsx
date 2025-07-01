@@ -1,8 +1,9 @@
 import { getTimeStringFromFrame } from "@/components/helpers";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
-import { RefObject, useMemo } from "react";
+import { Ref, RefObject, useMemo } from "react";
 import { Group, Layer, Stage, Text } from "react-konva";
 import AutoSizer from "react-virtualized-auto-sizer";
+import Konva from "konva";
 
 type TProps = {
   videoRef: RefObject<HTMLVideoElement | null>;
@@ -13,6 +14,7 @@ type TProps = {
   onTimeUpdate: (e: React.SyntheticEvent<HTMLVideoElement>) => void;
   sliderValue: number[];
   pilotName: string;
+  stageRef: Ref<Konva.Stage | null>;
 };
 
 export default function Video({
@@ -24,6 +26,7 @@ export default function Video({
   onTimeUpdate,
   sliderValue,
   pilotName,
+  stageRef,
 }: TProps) {
   return (
     <div className="w-full h-full relative">
@@ -36,6 +39,7 @@ export default function Video({
         onTimeUpdate={onTimeUpdate}
       />
       <OverlayVideo
+        stageRef={stageRef}
         frameStamps={frameStamps}
         videoProperties={videoProperties}
         sliderValue={sliderValue}
@@ -53,12 +57,14 @@ const sectorGap = 4;
 const margin = 16;
 const fontFamily = "Geist Mono";
 
-function OverlayVideo({
+export function OverlayVideo({
+  stageRef,
   frameStamps,
   videoProperties,
   sliderValue,
   pilotName,
 }: {
+  stageRef: Ref<Konva.Stage | null>;
   frameStamps: TFrameStamps;
   videoProperties: TVideoProperties;
   sliderValue: number[];
@@ -122,6 +128,7 @@ function OverlayVideo({
 
           return (
             <Stage
+              ref={stageRef}
               style={{
                 marginTop,
                 marginLeft,

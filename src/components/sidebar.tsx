@@ -2,9 +2,11 @@ import { getTimeStringFromFrame } from "@/components/helpers";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { OverlayVideo } from "@/components/video";
 import { cn } from "@/lib/utils";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
 import { fetchFile, toBlobURL } from "@ffmpeg/util";
+import Konva from "konva";
 import {
   ClockIcon,
   FlagIcon,
@@ -16,6 +18,7 @@ import {
   TvIcon,
 } from "lucide-react";
 import {
+  createRef,
   Dispatch,
   FC,
   SetStateAction,
@@ -23,6 +26,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { createRoot } from "react-dom/client";
 
 type TProps = {
   frameStamps: TFrameStamps;
@@ -41,7 +45,8 @@ export default function Sidebar({
 }: TProps) {
   const [isFfmpegLoaded, setIsFfmpegLoaded] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [ffmpegProgress, setFfmpegProgress] = useState(0);
+  const [overlayProgress, setOverlayProgress] = useState(0);
   const ffmpegRef = useRef(new FFmpeg());
 
   const load = async () => {
@@ -51,7 +56,7 @@ export default function Sidebar({
       console.log(message);
     });
     ffmpeg.on("progress", ({ progress }) => {
-      setProgress(progress);
+      setFfmpegProgress(progress);
     });
 
     await ffmpeg.load({
@@ -67,18 +72,71 @@ export default function Sidebar({
   const render = async () => {
     if (isRendering) return;
     setIsRendering(true);
+
     if (!isFfmpegLoaded) {
       console.error("FFmpeg is not loaded yet.");
       setIsRendering(false);
       return;
     }
+
+    const container = document.createElement("div");
+    container.style.cssText = `position:fixed;top:-99999px;left:-99999px;width:${videoProperties.width}px;height: ${videoProperties.height}px;`;
+    document.body.appendChild(container);
+    const stageRef = createRef<Konva.Stage>();
+    const root = createRoot(container);
+
     try {
       const ffmpeg = ffmpegRef.current;
+
+      for (let f = 0; f < videoProperties.totalFrames; f++) {
+        setOverlayProgress(f / videoProperties.totalFrames);
+        root.render(
+          <OverlayVideo
+            stageRef={stageRef}
+            pilotName={pilotName}
+            frameStamps={frameStamps}
+            videoProperties={videoProperties}
+            sliderValue={[f]}
+          />
+        );
+        await new Promise<void>((r) => requestAnimationFrame(() => r()));
+
+        const canvas = stageRef.current!.getLayers()[0].getCanvas()._canvas;
+        const png = await canvasToPng(canvas);
+        await ffmpeg.writeFile(
+          `olay_${f.toString().padStart(6, "0")}.png`,
+          new Uint8Array(await png.arrayBuffer())
+        );
+      }
+
+      const baseVideoName = `base.${videoProperties.extension}`;
+
       await ffmpeg.writeFile(
-        "input.webm",
+        baseVideoName,
         await fetchFile(videoProperties.url)
       );
-      await ffmpeg.exec(["-i", "input.webm", "output.mp4"]);
+
+      await ffmpeg.exec([
+        "-i",
+        baseVideoName, // [0] – background
+        "-i",
+        "olay_%06d.png", // [1] – overlay (has alpha)
+
+        "-filter_complex",
+        "[0:v][1:v]overlay=0:0:format=auto", // no scale, no shortest
+
+        "-map",
+        "0:a?",
+        "-c:a",
+        "copy", // keep original audio if any
+
+        "-c:v",
+        "libx264",
+        "-pix_fmt",
+        "yuv420p",
+        "output.mp4",
+      ]);
+
       const data = await ffmpeg.readFile("output.mp4");
       // download the output file
       const blob = new Blob([data], { type: "video/mp4" });
@@ -219,8 +277,10 @@ export default function Sidebar({
           disabled={!isFfmpegLoaded || isRendering}
           className="w-full font-extrabold"
         >
-          {isRendering
-            ? `Rendering: ${Math.ceil(progress * 100)}%`
+          {isRendering && ffmpegProgress > 0
+            ? `Rendering Video: ${Math.ceil(ffmpegProgress * 100)}%`
+            : isRendering
+            ? `Rendering Overlay: ${Math.ceil(overlayProgress * 100)}%`
             : isFfmpegLoaded
             ? "Render"
             : "Loading FFmpeg"}
@@ -293,5 +353,14 @@ function Section({
         </Button>
       )}
     </div>
+  );
+}
+
+function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(
+      (b) => (b ? resolve(b) : reject(new Error("toBlob() failed"))),
+      "image/png"
+    )
   );
 }

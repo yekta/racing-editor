@@ -5,6 +5,7 @@ export type TVideoProperties = {
   frameRate: number;
   totalFrames: number;
   duration: number;
+  extension: string;
 };
 
 export type TFrameStamps = {

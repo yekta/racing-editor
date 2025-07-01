@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import Video from "@/components/video";
 import useAppHotkeys from "@/lib/use-app-hotkeys";
 import { FFprobeWorker } from "ffprobe-wasm";
+import Konva from "konva";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const worker = new FFprobeWorker();
@@ -31,6 +32,7 @@ export default function Editor() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playPromiseRef = useRef<Promise<void> | null>(null);
   const [pilotName, setPilotName] = useState("");
+  const stageRef = useRef<Konva.Stage | null>(null);
 
   // Safe play function that handles promises properly
   const safePlay = useCallback(async () => {
@@ -80,6 +82,7 @@ export default function Editor() {
         console.log(stream);
         setVideoProperties({
           url: URL.createObjectURL(file),
+          extension: file.name.split(".").pop() || "mp4",
           width: stream.codec_width,
           height: stream.codec_height,
           frameRate: Number(stream.avg_frame_rate.split("/")[0]),
@@ -280,6 +283,7 @@ export default function Editor() {
                 frameStamps={frameStamps}
                 sliderValue={sliderValue}
                 pilotName={pilotName}
+                stageRef={stageRef}
               />
             </div>
             <div className="w-full flex flex-col border-t p-4">
