@@ -1,10 +1,12 @@
 "use client";
 
+import ButtonsBar from "@/components/buttons-bar";
 import { getTimeString } from "@/components/helpers";
+import { Indicator } from "@/components/indicator";
 import Sidebar from "@/components/sidebar";
+import { TFrameStamps, TVideoProperties } from "@/components/types";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { cn } from "@/lib/utils";
 import { FFprobeWorker } from "ffprobe-wasm";
 import {
   ChevronLeft,
@@ -15,7 +17,7 @@ import {
   PlayIcon,
   RocketIcon,
 } from "lucide-react";
-import { FC, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 
 const worker = new FFprobeWorker();
@@ -183,18 +185,49 @@ export default function Player() {
 
   useHotkeys("space", togglePlayPause, {
     enableOnContentEditable: true,
-    enableOnFormTags: true,
+    enableOnFormTags: false,
   });
 
   useHotkeys("arrowleft", goToPrevFrame, {
     enableOnContentEditable: true,
-    enableOnFormTags: true,
+    enableOnFormTags: false,
   });
 
   useHotkeys("arrowright", goToNextFrame, {
     enableOnContentEditable: true,
-    enableOnFormTags: true,
+    enableOnFormTags: false,
   });
+
+  useHotkeys(
+    "backspace,delete",
+    () => {
+      if (sliderValue[0] === frameStamps.start) {
+        setFrameStamps((prev) => ({
+          ...prev,
+          start: null,
+        }));
+        return;
+      }
+      if (sliderValue[0] === frameStamps.end) {
+        setFrameStamps((prev) => ({
+          ...prev,
+          end: null,
+        }));
+        return;
+      }
+      if (frameStamps.sectors.includes(sliderValue[0])) {
+        setFrameStamps((prev) => ({
+          ...prev,
+          sectors: prev.sectors.filter((s) => s !== sliderValue[0]),
+        }));
+        return;
+      }
+    },
+    {
+      enableOnContentEditable: true,
+      enableOnFormTags: false,
+    }
+  );
 
   return (
     <div className="w-full h-[100svh] flex flex-col">
@@ -273,172 +306,44 @@ export default function Player() {
                       <span className="px-[0.25ch]">)</span>
                     </span>
                   </p>
-                  <div className="flex-1 relative">
-                    <Slider
-                      value={sliderValue}
-                      onKeyDown={(e) => {
-                        e.preventDefault();
-                      }}
-                      onValueChange={(value) => {
-                        setSliderValue(value);
-                        if (videoRef.current && videoProperties) {
-                          const newTime =
-                            (value[0] / videoProperties.totalFrames) *
-                            videoProperties.duration;
-                          videoRef.current.currentTime = newTime;
-                        }
-                        videoRef.current?.pause();
-                      }}
-                      onPointerDown={() => setIsDragging(true)}
-                      onPointerUp={() => setIsDragging(false)}
-                      min={0}
-                      max={videoProperties.totalFrames}
-                      step={1}
-                      Indicators={Indicators}
-                    />
-                  </div>
-                  <div className="w-full gap-2 flex flex-wrap">
-                    <Button
-                      variant="progress"
-                      className="font-extrabold px-3 py-1.5 rounded-sm"
-                      onClick={() => {
-                        setFrameStamps((prev) => ({
-                          ...prev,
-                          start: sliderValue[0],
-                        }));
-                      }}
-                    >
-                      <RocketIcon className="size-4.5 -ml-0.75" />
-                      <p>Set Start</p>
-                    </Button>
-                    <Button
-                      variant="success"
-                      className="font-extrabold px-3 py-1.5 rounded-sm"
-                      onClick={() => {
-                        setFrameStamps((prev) => ({
-                          ...prev,
-                          end: sliderValue[0],
-                        }));
-                      }}
-                    >
-                      <FlagIcon className="size-4.5 -ml-0.75" />
-                      Set End
-                    </Button>
-                    <Button
-                      variant="warning"
-                      disabled={
-                        frameStamps.start === null ||
-                        frameStamps.end === null ||
-                        sliderValue[0] <= frameStamps.start ||
-                        sliderValue[0] >= frameStamps.end
+                  <Slider
+                    value={sliderValue}
+                    onKeyDown={(e) => {
+                      e.preventDefault();
+                    }}
+                    onValueChange={(value) => {
+                      setSliderValue(value);
+                      if (videoRef.current && videoProperties) {
+                        const newTime =
+                          (value[0] / videoProperties.totalFrames) *
+                          videoProperties.duration;
+                        videoRef.current.currentTime = newTime;
                       }
-                      className="font-extrabold px-3 py-1.5 rounded-sm"
-                      onClick={() => {
-                        if (frameStamps.sectors.includes(sliderValue[0])) {
-                          setFrameStamps((prev) => ({
-                            ...prev,
-                            sectors: prev.sectors.filter(
-                              (s) => s !== sliderValue[0]
-                            ),
-                          }));
-                          return;
-                        }
-                        setFrameStamps((prev) => ({
-                          ...prev,
-                          sectors: [...prev.sectors, sliderValue[0]].sort(
-                            (a, b) => a - b
-                          ),
-                        }));
-                      }}
-                    >
-                      <MapPinIcon className="size-4.5 -ml-0.75" />
-                      {frameStamps.sectors.includes(sliderValue[0])
-                        ? "Remove Sector"
-                        : "Add Sector"}
-                    </Button>
-                  </div>
+                      videoRef.current?.pause();
+                    }}
+                    onPointerDown={() => setIsDragging(true)}
+                    onPointerUp={() => setIsDragging(false)}
+                    min={0}
+                    max={videoProperties.totalFrames}
+                    step={1}
+                    Indicators={Indicators}
+                  />
+                  <ButtonsBar
+                    frameStamps={frameStamps}
+                    setFrameStamps={setFrameStamps}
+                    sliderValue={sliderValue}
+                  />
                 </div>
               </div>
             </div>
           </div>
           <Sidebar
             frameStamps={frameStamps}
+            setFrameStamps={setFrameStamps}
             videoProperties={videoProperties}
-            onClickDeleteSector={(index) => {
-              setFrameStamps((prev) => {
-                const newSectors = [...prev.sectors];
-                newSectors.splice(index, 1);
-                return {
-                  ...prev,
-                  sectors: newSectors,
-                };
-              });
-            }}
-            onClickDeleteStart={() => {
-              setFrameStamps((prev) => ({
-                ...prev,
-                start: null,
-              }));
-            }}
-            onClickDeleteEnd={() => {
-              setFrameStamps((prev) => ({
-                ...prev,
-                end: null,
-              }));
-            }}
           />
         </div>
       )}
     </div>
   );
 }
-
-function Indicator({
-  frame,
-  videoProperties,
-  className,
-  Icon,
-  classNameIcon,
-}: {
-  frame: number;
-  videoProperties: TVideoProperties;
-  className?: string;
-  Icon: FC<{ className?: string }>;
-  classNameIcon?: string;
-}) {
-  return (
-    <div
-      style={{
-        left: `${(frame / videoProperties.totalFrames) * 100}%`,
-      }}
-      className={cn(
-        "bg-foreground absolute top-1/2 -translate-y-1/2 h-full w-0.5 -translate-x-1/2 pointer-events-none",
-        className
-      )}
-    >
-      <div
-        className={cn(
-          "absolute top-1/2 p-0.75 -translate-y-1/2 size-5 left-0 -translate-x-1/2 text-background rounded-sm",
-          classNameIcon
-        )}
-      >
-        <Icon className="size-full" />
-      </div>
-    </div>
-  );
-}
-
-export type TVideoProperties = {
-  url: string;
-  width: number;
-  height: number;
-  frameRate: number;
-  totalFrames: number;
-  duration: number;
-};
-
-export type TFrameStamps = {
-  start: number | null;
-  end: number | null;
-  sectors: number[];
-};

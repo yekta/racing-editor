@@ -1,5 +1,5 @@
 import { getTimeStringFromFrame } from "@/components/helpers";
-import { TFrameStamps, TVideoProperties } from "@/components/player";
+import { TFrameStamps, TVideoProperties } from "@/components/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
@@ -11,22 +11,25 @@ import {
   TimerIcon,
   Trash2Icon,
 } from "lucide-react";
-import { FC, useEffect, useRef, useState } from "react";
+import {
+  Dispatch,
+  FC,
+  SetStateAction,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 type TProps = {
   frameStamps: TFrameStamps;
-  onClickDeleteSector: (index: number) => void;
-  onClickDeleteStart: () => void;
-  onClickDeleteEnd: () => void;
+  setFrameStamps: Dispatch<SetStateAction<TFrameStamps>>;
   videoProperties: TVideoProperties;
 };
 
 export default function Sidebar({
   frameStamps,
+  setFrameStamps,
   videoProperties,
-  onClickDeleteSector,
-  onClickDeleteStart,
-  onClickDeleteEnd,
 }: TProps) {
   const [isFfmpegLoaded, setIsFfmpegLoaded] = useState(false);
   const [isRendering, setIsRendering] = useState(false);
@@ -115,7 +118,16 @@ export default function Sidebar({
                 : sector - frameStamps.sectors[index - 1]
             }
             videoProperties={videoProperties}
-            onClickDelete={() => onClickDeleteSector(index)}
+            onClickDelete={() => {
+              setFrameStamps((prev) => {
+                const newSectors = [...prev.sectors];
+                newSectors.splice(index, 1);
+                return {
+                  ...prev,
+                  sectors: newSectors,
+                };
+              });
+            }}
             Icon={MapPinIcon}
           />
         ))}
@@ -140,7 +152,12 @@ export default function Sidebar({
             title="Start"
             frame={frameStamps.start}
             videoProperties={videoProperties}
-            onClickDelete={onClickDeleteStart}
+            onClickDelete={() => {
+              setFrameStamps((prev) => ({
+                ...prev,
+                start: null,
+              }));
+            }}
             Icon={RocketIcon}
           />
         )}
@@ -149,7 +166,12 @@ export default function Sidebar({
             title="End"
             frame={frameStamps.end}
             videoProperties={videoProperties}
-            onClickDelete={onClickDeleteEnd}
+            onClickDelete={() => {
+              setFrameStamps((prev) => ({
+                ...prev,
+                end: null,
+              }));
+            }}
             Icon={FlagIcon}
           />
         )}
