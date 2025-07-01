@@ -47,10 +47,8 @@ export default function ButtonsBar({
       <Button
         variant="warning"
         disabled={
-          frameStamps.start === null ||
-          frameStamps.end === null ||
-          sliderValue[0] <= frameStamps.start ||
-          sliderValue[0] >= frameStamps.end
+          (frameStamps.start !== null && sliderValue[0] <= frameStamps.start) ||
+          (frameStamps.end !== null && sliderValue[0] >= frameStamps.end)
         }
         className="font-extrabold px-3 py-1.5 rounded-sm"
         type="button"

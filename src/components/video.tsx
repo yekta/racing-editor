@@ -118,32 +118,31 @@ function OverlayVideo({
             frameRate: videoProperties.frameRate,
           })}
         </p>
-        {frameStamps.start !== null &&
-          frameStamps.end !== null &&
-          frameStamps.sectors.length > 0 && (
-            <div className="bg-background/50 flex text-lg leading-tight">
-              {frameStamps.sectors.map((sector, i) => (
-                <Sector
-                  key={i}
-                  data-before={
-                    frame <
-                    (i === 0 ? frameStamps.start! : frameStamps.sectors[i - 1])
-                      ? true
-                      : undefined
-                  }
-                  data-after={frame >= sector ? true : undefined}
-                  className="group/sector"
-                  classNameValue="group-data-before/sector:text-muted-foreground group-data-after/sector:text-success group-data-before/sector:data-after/sector:text-success"
-                  title={`S${i + 1}`}
-                  value={getDisplayTime({
-                    current: frame,
-                    start:
-                      i === 0 ? frameStamps.start! : frameStamps.sectors[i - 1],
-                    end: sector,
-                    frameRate: videoProperties.frameRate,
-                  })}
-                />
-              ))}
+        {frameStamps.sectors.length > 0 && (
+          <div className="bg-background/50 flex text-lg leading-tight">
+            {frameStamps.sectors.map((sector, i) => (
+              <Sector
+                key={i}
+                data-before={
+                  frame <
+                  (i === 0 ? frameStamps.start! : frameStamps.sectors[i - 1])
+                    ? true
+                    : undefined
+                }
+                data-after={frame >= sector ? true : undefined}
+                className="group/sector"
+                classNameValue="group-data-before/sector:text-muted-foreground group-data-after/sector:text-success group-data-before/sector:data-after/sector:text-success"
+                title={`S${i + 1}`}
+                value={getDisplayTime({
+                  current: frame,
+                  start:
+                    i === 0 ? frameStamps.start! : frameStamps.sectors[i - 1],
+                  end: sector,
+                  frameRate: videoProperties.frameRate,
+                })}
+              />
+            ))}
+            {frameStamps.end !== null && (
               <Sector
                 title={`S${frameStamps.sectors.length + 1}`}
                 value={getDisplayTime({
@@ -161,8 +160,9 @@ function OverlayVideo({
                 className="group/sector"
                 classNameValue="group-data-before/sector:text-muted-foreground group-data-after/sector:text-success group-data-before/sector:data-after/sector:text-success"
               />
-            </div>
-          )}
+            )}
+          </div>
+        )}
       </div>
     </AbsoluteFill>
   );
