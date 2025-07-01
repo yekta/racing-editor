@@ -28,8 +28,45 @@ export default function Editor() {
   });
 
   const animationFrameRef = useRef<number>(0);
-
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const playPromiseRef = useRef<Promise<void> | null>(null);
+
+  // Safe play function that handles promises properly
+  const safePlay = useCallback(async () => {
+    if (!videoRef.current) return;
+
+    try {
+      // Wait for any pending play promise to resolve
+      if (playPromiseRef.current) {
+        await playPromiseRef.current;
+      }
+
+      playPromiseRef.current = videoRef.current.play();
+      await playPromiseRef.current;
+      playPromiseRef.current = null;
+    } catch (error) {
+      // Handle play interruption gracefully
+      console.log("Play interrupted:", error);
+      playPromiseRef.current = null;
+    }
+  }, []);
+
+  // Safe pause function
+  const safePause = useCallback(async () => {
+    if (!videoRef.current) return;
+
+    try {
+      // Wait for any pending play promise to resolve first
+      if (playPromiseRef.current) {
+        await playPromiseRef.current;
+        playPromiseRef.current = null;
+      }
+
+      videoRef.current.pause();
+    } catch (error) {
+      console.log("Pause error:", error);
+    }
+  }, []);
 
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>
@@ -76,21 +113,24 @@ export default function Editor() {
     }
   }, [isDragging, isPlaying, videoProperties]);
 
-  const togglePlayPause = useCallback(() => {
-    setIsPlaying((p) => {
-      const newIsPlaying = !p;
-      if (newIsPlaying) {
-        videoRef.current?.play();
-      } else {
-        videoRef.current?.pause();
-      }
-      return newIsPlaying;
-    });
-  }, []);
+  const togglePlayPause = useCallback(async () => {
+    const newIsPlaying = !isPlaying;
+    setIsPlaying(newIsPlaying);
 
-  const goToPrevFrame = useCallback(() => {
+    if (newIsPlaying) {
+      await safePlay();
+    } else {
+      await safePause();
+    }
+  }, [isPlaying, safePlay, safePause]);
+
+  const goToPrevFrame = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
-    videoRef.current.pause();
+
+    // Always pause first and update playing state
+    setIsPlaying(false);
+    await safePause();
+
     const currentFrame = Math.round(
       (videoRef.current.currentTime / videoProperties.duration) *
         videoProperties.totalFrames
@@ -100,11 +140,15 @@ export default function Editor() {
     const newTime =
       (newFrame / videoProperties.totalFrames) * videoProperties.duration;
     videoRef.current.currentTime = newTime;
-  }, [videoProperties]);
+  }, [videoProperties, safePause]);
 
-  const goToNextFrame = useCallback(() => {
+  const goToNextFrame = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
-    videoRef.current.pause();
+
+    // Always pause first and update playing state
+    setIsPlaying(false);
+    await safePause();
+
     const currentFrame = Math.round(
       (videoRef.current.currentTime / videoProperties.duration) *
         videoProperties.totalFrames
@@ -114,11 +158,13 @@ export default function Editor() {
     const newTime =
       (newFrame / videoProperties.totalFrames) * videoProperties.duration;
     videoRef.current.currentTime = newTime;
-  }, [videoProperties]);
+  }, [videoProperties, safePause]);
 
-  const jumpToPrevIndicator = useCallback(() => {
+  const jumpToPrevIndicator = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
-    videoRef.current.pause();
+
+    setIsPlaying(false);
+    await safePause();
 
     const currentFrame = Math.round(
       (videoRef.current.currentTime / videoProperties.duration) *
@@ -142,11 +188,13 @@ export default function Editor() {
         videoProperties.duration;
       videoRef.current.currentTime = newTime;
     }
-  }, [videoProperties, frameStamps]);
+  }, [videoProperties, frameStamps, safePause]);
 
-  const jumpToNextIndicator = useCallback(() => {
+  const jumpToNextIndicator = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
-    videoRef.current.pause();
+
+    setIsPlaying(false);
+    await safePause();
 
     const currentFrame = Math.round(
       (videoRef.current.currentTime / videoProperties.duration) *
@@ -170,7 +218,7 @@ export default function Editor() {
         videoProperties.duration;
       videoRef.current.currentTime = newTime;
     }
-  }, [videoProperties, frameStamps]);
+  }, [videoProperties, frameStamps, safePause]);
 
   const Indicators_ = useCallback(() => {
     if (!videoProperties) return null;
@@ -182,11 +230,11 @@ export default function Editor() {
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying) {
-        videoRef.current.play();
+        safePlay();
         // Start the smooth update loop
         updateSliderPosition();
       } else {
-        videoRef.current.pause();
+        safePause();
         // Cancel the animation frame when paused
         if (animationFrameRef.current) {
           cancelAnimationFrame(animationFrameRef.current);
@@ -199,7 +247,7 @@ export default function Editor() {
         cancelAnimationFrame(animationFrameRef.current);
       }
     };
-  }, [isPlaying, videoProperties, updateSliderPosition]);
+  }, [isPlaying, videoProperties, updateSliderPosition, safePlay, safePause]);
 
   useAppHotkeys({
     togglePlayPause,
@@ -257,9 +305,20 @@ export default function Editor() {
                           videoProperties.duration;
                         videoRef.current.currentTime = newTime;
                       }
-                      videoRef.current?.pause();
+                      // Only pause if we're currently playing
+                      if (isPlaying) {
+                        setIsPlaying(false);
+                        safePause();
+                      }
                     }}
-                    onPointerDown={() => setIsDragging(true)}
+                    onPointerDown={() => {
+                      setIsDragging(true);
+                      // Pause when starting to drag
+                      if (isPlaying) {
+                        setIsPlaying(false);
+                        safePause();
+                      }
+                    }}
                     onPointerUp={() => setIsDragging(false)}
                     className="group/slider"
                     data-at-start={
