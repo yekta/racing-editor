@@ -102,7 +102,7 @@
   --destructive: oklch(0.8 0.2 22.216);
   --success: oklch(0.9 0.19218 147.423);
   --warning: oklch(0.9 0.15295 87.034);
-  --progress: oklch(0.7 0.12646 247.659);
+  --progress: oklch(0.8 0.12646 247.659);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.556 0 0);

@@ -243,6 +243,7 @@ export default function Player() {
                     videoProperties={videoProperties}
                     sliderValue={sliderValue}
                     videoRef={videoRef}
+                    frameStamps={frameStamps}
                   />
                   <Slider
                     value={sliderValue}
