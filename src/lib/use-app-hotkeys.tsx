@@ -26,6 +26,7 @@ export default function useAppHotkeys({
   useHotkeys("space", togglePlayPause, {
     enableOnContentEditable: true,
     enableOnFormTags: false,
+    preventDefault: true,
   });
 
   useHotkeys("arrowleft", goToPrevFrame, {
