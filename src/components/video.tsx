@@ -54,7 +54,7 @@ const lapTimeFontSize = 32;
 const sectorFontSize = 16;
 const gap = 8;
 const sectorGap = 4;
-const margin = 16;
+const margin = 24;
 const fontFamily = "Geist Mono";
 
 export function OverlayVideo({
@@ -91,14 +91,13 @@ export function OverlayVideo({
 
   const divHeight = useMemo(() => {
     return (
-      pilotNameFontSize +
-      gap +
+      (pilotName !== "" ? pilotNameFontSize + gap : 0) +
       lapTimeFontSize +
       (sectors.length > 0
         ? gap + sectorFontSize + sectorGap + sectorFontSize
         : 0)
     );
-  }, [sectors.length]);
+  }, [sectors.length, pilotName]);
 
   return (
     <div className="w-full h-full absolute z-10 left-0 top-0">
@@ -135,33 +134,37 @@ export function OverlayVideo({
                 width: canvasWidth,
                 height: canvasHeight,
               }}
-              className="border border-red-300 overflow-hidden"
-              width={videoProperties.width}
-              height={videoProperties.height}
+              className="overflow-hidden"
+              width={canvasWidth}
+              height={canvasHeight}
             >
               <Layer width={canvasWidth} height={canvasHeight}>
                 <Group y={canvasHeight - divHeight - margin}>
-                  <Text
-                    width={canvasWidth}
-                    height={canvasHeight}
-                    align="center"
-                    text={pilotName !== "" ? pilotName : `Pilot name`}
-                    fontSize={pilotNameFontSize}
-                    fill="white"
-                    shadowEnabled={true}
-                    shadowColor="rgba(0, 0, 0, 0.3)"
-                    shadowOffsetY={2}
-                    shadowBlur={4}
-                    shadowOffsetX={0}
-                    fontFamily={fontFamily}
-                  />
+                  {pilotName !== "" && (
+                    <Text
+                      width={canvasWidth}
+                      height={canvasHeight}
+                      align="center"
+                      text={pilotName !== "" ? pilotName : `Pilot name`}
+                      fontSize={pilotNameFontSize}
+                      fill="white"
+                      shadowEnabled={true}
+                      shadowColor="rgba(0, 0, 0, 0.3)"
+                      shadowOffsetY={2}
+                      shadowBlur={4}
+                      shadowOffsetX={0}
+                      fontFamily={fontFamily}
+                    />
+                  )}
                   <Text
                     width={canvasWidth}
                     height={canvasHeight}
                     align="center"
                     fontSize={lapTimeFontSize}
                     fontStyle="bold"
-                    offsetY={-1 * (pilotNameFontSize + gap)}
+                    offsetY={
+                      -1 * (pilotName !== "" ? pilotNameFontSize + gap : 0)
+                    }
                     text={getDisplayTime({
                       current: currentFrame,
                       start: frameStamps.start !== null ? frameStamps.start : 0,
@@ -183,7 +186,10 @@ export function OverlayVideo({
                     <Group
                       x={canvasWidth / 2 - (sectorWidth * sectors.length) / 2}
                       offsetY={
-                        -1 * (pilotNameFontSize + lapTimeFontSize + gap * 2)
+                        -1 *
+                        ((pilotName !== "" ? pilotNameFontSize + gap : 0) +
+                          lapTimeFontSize +
+                          gap)
                       }
                       className="bg-background/50 flex text-lg leading-tight"
                     >

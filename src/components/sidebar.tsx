@@ -51,6 +51,7 @@ export default function Sidebar({
 
   const load = async () => {
     const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
+
     const ffmpeg = ffmpegRef.current;
     ffmpeg.on("log", ({ message }) => {
       console.log(message);
@@ -84,6 +85,7 @@ export default function Sidebar({
     document.body.appendChild(container);
     const stageRef = createRef<Konva.Stage>();
     const root = createRoot(container);
+    const overlayPrefix = "overlay";
 
     try {
       const ffmpeg = ffmpegRef.current;
@@ -101,10 +103,10 @@ export default function Sidebar({
         );
         await new Promise<void>((r) => requestAnimationFrame(() => r()));
 
-        const canvas = stageRef.current!.getLayers()[0].getCanvas()._canvas;
-        const png = await canvasToPng(canvas);
+        const dataURL = stageRef.current!.toDataURL({ pixelRatio: 1 });
+        const png = await (await fetch(dataURL)).blob();
         await ffmpeg.writeFile(
-          `olay_${f.toString().padStart(6, "0")}.png`,
+          `${overlayPrefix}_${f.toString().padStart(6, "0")}.png`,
           new Uint8Array(await png.arrayBuffer())
         );
       }
@@ -117,23 +119,38 @@ export default function Sidebar({
       );
 
       await ffmpeg.exec([
-        "-i",
-        baseVideoName, // [0] – background
-        "-i",
-        "olay_%06d.png", // [1] – overlay (has alpha)
+        /* overwrite if output.mp4 exists */
+        "-y",
 
+        /* ------------ input #0 : base video ------------ */
+        "-i",
+        baseVideoName,
+
+        /* ------------ input #1 : PNG sequence ---------- */
+        "-framerate",
+        String(videoProperties.frameRate),
+        "-i",
+        `${overlayPrefix}_%06d.png`,
+
+        /* ------------ filters -------------------------- */
         "-filter_complex",
-        "[0:v][1:v]overlay=0:0:format=auto", // no scale, no shortest
+        `[1:v]setpts=PTS-STARTPTS,fps=${videoProperties.frameRate}[ol];` +
+          `[0:v][ol]overlay=0:0:format=auto:shortest=1:eof_action=endall`,
 
+        /* ------------ encode --------------------------- */
         "-map",
         "0:a?",
         "-c:a",
-        "copy", // keep original audio if any
-
+        "copy",
         "-c:v",
         "libx264",
+        "-preset",
+        "fast",
+        "-crf",
+        "32",
         "-pix_fmt",
         "yuv420p",
+
         "output.mp4",
       ]);
 
@@ -353,14 +370,5 @@ function Section({
         </Button>
       )}
     </div>
-  );
-}
-
-function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
-  return new Promise((resolve, reject) =>
-    canvas.toBlob(
-      (b) => (b ? resolve(b) : reject(new Error("toBlob() failed"))),
-      "image/png"
-    )
   );
 }
