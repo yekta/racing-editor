@@ -1,12 +1,9 @@
-import { getTimeStringFromFrame } from "@/components/helpers";
-import { TFrameStamps, TVideoProperties } from "@/components/types";
+import { getTimeStringFromFrame } from "@/components/editor/helpers";
+import { TFrameStamps, TVideoProperties } from "@/components/editor/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { OverlayVideo } from "@/components/video";
 import { cn } from "@/lib/utils";
-import { FFmpeg } from "@ffmpeg/ffmpeg";
-import { fetchFile, toBlobURL } from "@ffmpeg/util";
-import Konva from "konva";
+import { api } from "@/server/trpc/setup/client";
 import {
   ClockIcon,
   FlagIcon,
@@ -17,16 +14,7 @@ import {
   Trash2Icon,
   TvIcon,
 } from "lucide-react";
-import {
-  createRef,
-  Dispatch,
-  FC,
-  SetStateAction,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { createRoot } from "react-dom/client";
+import { Dispatch, FC, SetStateAction } from "react";
 
 type TProps = {
   frameStamps: TFrameStamps;
@@ -34,6 +22,8 @@ type TProps = {
   videoProperties: TVideoProperties;
   pilotName: string;
   onPilotNameChange: (value: string) => void;
+  isPendingUploadVideo: boolean;
+  errorUploadVideo: string | undefined;
 };
 
 export default function Sidebar({
@@ -42,142 +32,14 @@ export default function Sidebar({
   videoProperties,
   pilotName,
   onPilotNameChange,
-}: TProps) {
-  const [isFfmpegLoaded, setIsFfmpegLoaded] = useState(false);
-  const [isRendering, setIsRendering] = useState(false);
-  const [ffmpegProgress, setFfmpegProgress] = useState(0);
-  const [overlayProgress, setOverlayProgress] = useState(0);
-  const ffmpegRef = useRef(new FFmpeg());
-
-  const load = async () => {
-    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
-
-    const ffmpeg = ffmpegRef.current;
-    ffmpeg.on("log", ({ message }) => {
-      console.log(message);
-    });
-    ffmpeg.on("progress", ({ progress }) => {
-      setFfmpegProgress(progress);
-    });
-
-    await ffmpeg.load({
-      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
-      wasmURL: await toBlobURL(
-        `${baseURL}/ffmpeg-core.wasm`,
-        "application/wasm"
-      ),
-    });
-    setIsFfmpegLoaded(true);
-  };
-
-  const render = async () => {
-    if (isRendering) return;
-    setIsRendering(true);
-
-    if (!isFfmpegLoaded) {
-      console.error("FFmpeg is not loaded yet.");
-      setIsRendering(false);
-      return;
-    }
-
-    const container = document.createElement("div");
-    container.style.cssText = `position:fixed;top:-99999px;left:-99999px;width:${videoProperties.width}px;height: ${videoProperties.height}px;`;
-    document.body.appendChild(container);
-    const stageRef = createRef<Konva.Stage>();
-    const root = createRoot(container);
-    const overlayPrefix = "overlay";
-
-    try {
-      const ffmpeg = ffmpegRef.current;
-
-      for (let f = 0; f < videoProperties.totalFrames; f++) {
-        setOverlayProgress(f / videoProperties.totalFrames);
-        root.render(
-          <OverlayVideo
-            stageRef={stageRef}
-            pilotName={pilotName}
-            frameStamps={frameStamps}
-            videoProperties={videoProperties}
-            sliderValue={[f]}
-          />
-        );
-        await new Promise<void>((r) => requestAnimationFrame(() => r()));
-
-        const dataURL = stageRef.current!.toDataURL({ pixelRatio: 1 });
-        const png = await (await fetch(dataURL)).blob();
-        await ffmpeg.writeFile(
-          `${overlayPrefix}_${f.toString().padStart(6, "0")}.png`,
-          new Uint8Array(await png.arrayBuffer())
-        );
-      }
-
-      const baseVideoName = `base.${videoProperties.extension}`;
-
-      await ffmpeg.writeFile(
-        baseVideoName,
-        await fetchFile(videoProperties.url)
-      );
-
-      await ffmpeg.exec([
-        /* overwrite if output.mp4 exists */
-        "-y",
-
-        "-threads",
-        "4",
-
-        /* ------------ input #0 : base video ------------ */
-        "-i",
-        baseVideoName,
-
-        /* ------------ input #1 : PNG sequence ---------- */
-        "-framerate",
-        String(videoProperties.frameRate),
-        "-i",
-        `${overlayPrefix}_%06d.png`,
-
-        /* ------------ filters -------------------------- */
-        "-filter_complex",
-        `[1:v]setpts=PTS-STARTPTS,fps=${videoProperties.frameRate}[ol];` +
-          `[0:v][ol]overlay=0:0:format=auto:shortest=1:eof_action=endall`,
-
-        /* ------------ encode --------------------------- */
-        "-map",
-        "0:a?",
-        "-c:a",
-        "copy",
-        "-c:v",
-        "libx264",
-        "-preset",
-        "fast",
-        "-crf",
-        "23",
-        "-pix_fmt",
-        "yuv420p",
-
-        "output.mp4",
-      ]);
-
-      const data = await ffmpeg.readFile("output.mp4");
-      // download the output file
-      const blob = new Blob([data], { type: "video/mp4" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "output.mp4";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.log("Error during rendering:", error);
-    } finally {
-      setIsRendering(false);
-    }
-  };
-
-  useEffect(() => {
-    load();
-  }, []);
+  isPendingUploadVideo,
+}: /* errorUploadVideo, */
+TProps) {
+  const {
+    mutate: renderVideo,
+    isPending: isPendingRenderVideo,
+    /* error: errorPendingVideo, */
+  } = api.render.renderVideo.useMutation();
 
   return (
     <div className="w-80 border-l overflow-hidden flex flex-col relative">
@@ -293,17 +155,17 @@ export default function Sidebar({
       </div>
       <div className="w-full p-4 border-t">
         <Button
-          onClick={render}
-          disabled={!isFfmpegLoaded || isRendering}
+          onClick={() =>
+            renderVideo({ id: videoProperties.id, pilotName, ...frameStamps })
+          }
+          disabled={isPendingRenderVideo || isPendingUploadVideo}
           className="w-full font-extrabold"
         >
-          {isRendering && ffmpegProgress > 0
-            ? `Rendering Video: ${Math.ceil(ffmpegProgress * 100)}%`
-            : isRendering
-            ? `Rendering Overlay: ${Math.ceil(overlayProgress * 100)}%`
-            : isFfmpegLoaded
-            ? "Render"
-            : "Loading FFmpeg"}
+          {isPendingUploadVideo
+            ? "Uploading Video"
+            : isPendingRenderVideo
+            ? `Rendering Video...`
+            : "Render"}
         </Button>
       </div>
     </div>

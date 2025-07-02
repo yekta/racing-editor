@@ -1,5 +1,8 @@
-import { getTimeString, getTimeStringFromFrame } from "@/components/helpers";
-import { TFrameStamps, TVideoProperties } from "@/components/types";
+import {
+  getTimeString,
+  getTimeStringFromFrame,
+} from "@/components/editor/helpers";
+import { TFrameStamps, TVideoProperties } from "@/components/editor/types";
 import { cn } from "@/lib/utils";
 import { FlagIcon, MapPinIcon, RocketIcon } from "lucide-react";
 

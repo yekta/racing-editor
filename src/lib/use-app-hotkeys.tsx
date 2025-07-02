@@ -1,4 +1,4 @@
-import { TFrameStamps } from "@/components/types";
+import { TFrameStamps } from "@/components/editor/types";
 import { Dispatch, SetStateAction } from "react";
 import { useHotkeys } from "react-hotkeys-hook";
 

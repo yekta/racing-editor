@@ -1,18 +1,18 @@
 "use client";
 
-import ButtonsBar from "@/components/buttons-bar";
-import Indicators from "@/components/indicators";
+import ButtonsBar from "@/components/editor/buttons-bar";
+import Indicators from "@/components/editor/indicators";
 
-import PlayPauseSection from "@/components/play-pause-section";
-import Sidebar from "@/components/sidebar";
-import TimestampSection from "@/components/timestamp-section";
-import { TFrameStamps, TVideoProperties } from "@/components/types";
+import PlayPauseSection from "@/components/editor/play-pause-section";
+import Sidebar from "@/components/editor/sidebar";
+import TimestampSection from "@/components/editor/timestamp-section";
+import { TFrameStamps, TVideoProperties } from "@/components/editor/types";
+import VideoDropzone from "@/components/editor/video-dropzone";
+import Video from "@/components/editor/video/video";
 import { Slider } from "@/components/ui/slider";
-import Video from "@/components/video";
-import VideoDropzone from "@/components/video-dropzone";
 import useAppHotkeys from "@/lib/use-app-hotkeys";
+import { api } from "@/server/trpc/setup/client";
 import { FFprobeWorker } from "ffprobe-wasm";
-import Konva from "konva";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const worker = new FFprobeWorker();
@@ -33,7 +33,11 @@ export default function Editor() {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const playPromiseRef = useRef<Promise<void> | null>(null);
   const [pilotName, setPilotName] = useState("");
-  const stageRef = useRef<Konva.Stage | null>(null);
+  const {
+    mutateAsync: uploadVideo,
+    isPending: isPendingUploadVideo,
+    error: errorUploadVideo,
+  } = api.upload.uploadVideo.useMutation();
 
   // Safe play function that handles promises properly
   const safePlay = useCallback(async () => {
@@ -77,7 +81,12 @@ export default function Editor() {
       const result = await worker.getFileInfo(file);
       if (result.streams.length > 0) {
         const stream = result.streams[0];
+        const formData = new FormData();
+        formData.append("video", file);
+        const { id } = await uploadVideo(formData);
+
         setVideoProperties({
+          id,
           url: URL.createObjectURL(file),
           extension: file.name.split(".").pop() || "mp4",
           width: stream.codec_width,
@@ -274,7 +283,6 @@ export default function Editor() {
                 frameStamps={frameStamps}
                 sliderValue={sliderValue}
                 pilotName={pilotName}
-                stageRef={stageRef}
               />
             </div>
             <div className="w-full flex flex-col border-t p-4">
@@ -322,13 +330,17 @@ export default function Editor() {
                     onPointerUp={() => setIsDragging(false)}
                     className="group/slider"
                     data-at-start={
-                      frameStamps.start === sliderValue[0] ? true : undefined
+                      frameStamps.start === sliderValue[0] && !isPlaying
+                        ? true
+                        : undefined
                     }
                     data-at-end={
-                      frameStamps.end === sliderValue[0] ? true : undefined
+                      frameStamps.end === sliderValue[0] && !isPlaying
+                        ? true
+                        : undefined
                     }
                     data-at-sector={
-                      frameStamps.sectors.includes(sliderValue[0])
+                      frameStamps.sectors.includes(sliderValue[0]) && !isPlaying
                         ? true
                         : undefined
                     }
@@ -355,6 +367,8 @@ export default function Editor() {
             frameStamps={frameStamps}
             setFrameStamps={setFrameStamps}
             videoProperties={videoProperties}
+            isPendingUploadVideo={isPendingUploadVideo}
+            errorUploadVideo={errorUploadVideo?.message}
           />
         </div>
       )}

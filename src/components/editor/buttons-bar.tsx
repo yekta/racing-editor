@@ -1,4 +1,4 @@
-import { TFrameStamps } from "@/components/types";
+import { TFrameStamps } from "@/components/editor/types";
 import { Button } from "@/components/ui/button";
 import { FlagIcon, MapPinIcon, RocketIcon } from "lucide-react";
 import { Dispatch, SetStateAction } from "react";

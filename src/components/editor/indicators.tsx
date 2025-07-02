@@ -1,4 +1,4 @@
-import { TFrameStamps, TVideoProperties } from "@/components/types";
+import { TFrameStamps, TVideoProperties } from "@/components/editor/types";
 import { cn } from "@/lib/utils";
 import { FlagIcon, MapPinIcon, RocketIcon } from "lucide-react";
 import { FC } from "react";
