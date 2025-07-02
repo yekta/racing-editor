@@ -9,6 +9,7 @@ import TimestampSection from "@/components/timestamp-section";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
 import { Slider } from "@/components/ui/slider";
 import Video from "@/components/video";
+import VideoDropzone from "@/components/video-dropzone";
 import useAppHotkeys from "@/lib/use-app-hotkeys";
 import { FFprobeWorker } from "ffprobe-wasm";
 import Konva from "konva";
@@ -71,10 +72,7 @@ export default function Editor() {
     }
   }, []);
 
-  const handleFileUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
+  const onDropFile = async (file: File) => {
     if (file && file.type.startsWith("video/")) {
       const result = await worker.getFileInfo(file);
       if (result.streams.length > 0) {
@@ -262,9 +260,7 @@ export default function Editor() {
 
   return (
     <div className="w-full h-[100svh] flex flex-col">
-      {!videoProperties && (
-        <input className="m-auto" type="file" onChange={handleFileUpload} />
-      )}
+      {!videoProperties && <VideoDropzone onDropFile={onDropFile} />}
       {videoProperties && (
         <div className="w-full flex flex-1 overflow-hidden">
           <div className="w-full flex flex-col flex-1 overflow-hidden min-h-0">
