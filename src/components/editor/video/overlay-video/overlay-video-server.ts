@@ -8,11 +8,19 @@ import {
   getSectors,
   getSectorWidth,
 } from "@/components/editor/video/overlay-video/overlay-shared";
-import { overlayVideoFolderName, rendersPath } from "@/server/constants";
+import { overlayVideoFramesFolderName, rendersPath } from "@/server/constants";
 import { createCanvas } from "@napi-rs/canvas";
+import { execa } from "execa";
+import ffmpegPath from "ffmpeg-static";
+import ffprobePath from "ffprobe-static";
 import Konva from "konva";
 import fs from "node:fs/promises";
 import path from "node:path";
+
+export const ffmpegExePath = ffmpegPath ?? process.env.FFMPEG_PATH ?? "ffmpeg";
+export const ffprobeExePath = (ffprobePath.path ??
+  process.env.FFPROBE_PATH ??
+  "ffprobe") as string;
 
 function initKonva({
   videoProperties,
@@ -25,7 +33,11 @@ function initKonva({
 }) {
   const { width, height } = videoProperties;
   const canvas = createCanvas(width, height);
-  const stage = new Konva.Stage({ width, height, _canvas: canvas });
+  const stage = new Konva.Stage({
+    width,
+    height,
+    _canvas: canvas,
+  });
   const mainLayer = new Konva.Layer();
 
   const sectors = getSectors(frameStamps);
@@ -39,7 +51,7 @@ function initKonva({
   mainLayer.add(mainGroup);
   stage.add(mainLayer);
 
-  return { stage, canvas, mainLayer, mainGroup };
+  return { canvas, stage, mainLayer, mainGroup };
 }
 
 export async function renderOverlayVideo({
@@ -51,15 +63,16 @@ export async function renderOverlayVideo({
   frameStamps: TFrameStamps;
   pilotName: string;
 }) {
-  const folderPath = path.join(
-    rendersPath,
-    videoProperties.id,
-    overlayVideoFolderName
+  const mainFolderPath = path.join(rendersPath, videoProperties.id);
+  const overlayVideoFramesFolderPath = path.join(
+    mainFolderPath,
+    overlayVideoFramesFolderName
   );
+  const outputVideoPath = path.join(mainFolderPath, "overlay.mov");
 
   // Create the render folder for this video
   try {
-    await fs.mkdir(folderPath, {
+    await fs.mkdir(overlayVideoFramesFolderPath, {
       recursive: true,
     });
   } catch (error) {
@@ -76,7 +89,7 @@ export async function renderOverlayVideo({
   const sectors = getSectors(frameStamps);
 
   for (let i = 0; i < videoProperties.totalFrames; i++) {
-    const dataUrl = renderFrame({
+    const buffer = await renderFrame({
       currentFrame: i,
       videoProperties,
       frameStamps,
@@ -86,17 +99,52 @@ export async function renderOverlayVideo({
       sectors,
     });
     // Save data url to a storage
-    const base64Data = dataUrl.replace(/^data:image\/png;base64,/, "");
-    const buffer = Buffer.from(base64Data, "base64");
     const filePath = path.join(
-      folderPath,
+      overlayVideoFramesFolderPath,
       `frame_${i.toString().padStart(8, "0")}.png`
     );
     await fs.writeFile(filePath, buffer);
   }
+
+  const pattern = path.join(overlayVideoFramesFolderPath, "frame_%08d.png");
+
+  await execa(ffmpegExePath, [
+    "-y",
+    "-start_number",
+    "0",
+    "-framerate",
+    videoProperties.frameRate.toString(),
+    "-i",
+    pattern,
+
+    // ----- Apple ProRes 4444 w/ alpha -----
+    "-c:v",
+    "prores_ks",
+    "-profile:v",
+    "4", // 4 = 4444
+    "-pix_fmt",
+    "yuva444p10le", // 10-bit RGBA keeps transparency
+
+    // ----- keep exact fps on the output -----
+    "-r",
+    videoProperties.frameRate.toString(),
+    outputVideoPath,
+  ]);
+
+  // Delete the frames folder after rendering
+  try {
+    await fs.rm(overlayVideoFramesFolderPath, { recursive: true, force: true });
+  } catch (error) {
+    console.error("Error deleting frames folder", error);
+    throw new Error("Error deleting frames folder");
+  }
+
+  return {
+    videoPath: outputVideoPath,
+  };
 }
 
-function renderFrame({
+async function renderFrame({
   currentFrame,
   videoProperties,
   frameStamps,
@@ -113,6 +161,7 @@ function renderFrame({
   mainGroup: Konva.Group;
   mainLayer: Konva.Layer;
 }) {
+  const start = performance.now();
   const lapTimeProps = getLapTimeProps({
     currentFrame,
     frameStamps,
@@ -165,10 +214,18 @@ function renderFrame({
     });
   }
 
-  mainGroup.draw();
-  const dataUrl = mainLayer.getCanvas().toDataURL("image/png", 10);
   mainLayer.clear();
+  mainLayer.draw();
+
+  const canvas = mainLayer.getCanvas()._canvas;
+  // @ts-expect-error - This is fine
+  const png = canvas.toBuffer("image/png");
+
   mainGroup.removeChildren();
-  mainLayer.batchDraw();
-  return dataUrl;
+
+  const end = performance.now();
+  console.log(
+    `Rendered frame ${currentFrame} in: ${Math.round(end - start)}ms`
+  );
+  return png as Buffer;
 }

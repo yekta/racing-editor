@@ -14,7 +14,7 @@ import {
   Trash2Icon,
   TvIcon,
 } from "lucide-react";
-import { Dispatch, FC, SetStateAction } from "react";
+import { Dispatch, FC, SetStateAction, useEffect } from "react";
 
 type TProps = {
   frameStamps: TFrameStamps;
@@ -37,9 +37,25 @@ export default function Sidebar({
 TProps) {
   const {
     mutate: renderVideo,
+    data,
     isPending: isPendingRenderVideo,
     /* error: errorPendingVideo, */
   } = api.render.renderVideo.useMutation();
+
+  useEffect(() => {
+    if (data) {
+      // Create a file and download it
+      const blob = new Blob([data.video], { type: data.type });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${data.fileName}.mp4`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  }, [data]);
 
   return (
     <div className="w-80 border-l overflow-hidden flex flex-col relative">

@@ -6,21 +6,15 @@ import {
 import { rendersPath, uploadsPath } from "@/server/constants";
 import { createTRPCRouter, privateProcedure } from "@/server/trpc/setup/trpc";
 import { TRPCError } from "@trpc/server";
-import ffmpegPath from "ffmpeg-static";
-import ffprobePath from "ffprobe-static";
+import {
+  ffmpegExePath,
+  ffprobeExePath,
+  renderOverlayVideo,
+} from "@/components/editor/video/overlay-video/overlay-video-server";
+import { execa } from "execa";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { z } from "zod";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
-import { renderOverlayVideo } from "@/components/editor/video/overlay-video/overlay-video-server";
-
-const execFileAsync = promisify(execFile);
-
-const ffmpegExePath = ffmpegPath ?? process.env.FFMPEG_PATH ?? "ffmpeg";
-const ffprobeExePath = (ffprobePath.path ??
-  process.env.FFPROBE_PATH ??
-  "ffprobe") as string;
 
 export const renderRouter = createTRPCRouter({
   renderVideo: privateProcedure
@@ -77,13 +71,15 @@ export const renderRouter = createTRPCRouter({
           message: `Video with id "${id}" not found`,
         });
       }
-      console.log("Render specs", fileName, start, end, sectors, pilotName);
+      console.log(
+        JSON.stringify({ fileName, start, end, sectors, pilotName }, null, 2)
+      );
 
       // Read the video file
       const input = path.join(uploadsPath, fileName);
 
       // Check metadata
-      const { stdout } = await execFileAsync(ffprobeExePath, [
+      const { stdout } = await execa(ffprobeExePath, [
         "-v",
         "quiet",
         "-print_format",
@@ -93,6 +89,7 @@ export const renderRouter = createTRPCRouter({
         input,
       ]);
       const videoMetadata = JSON.parse(stdout);
+
       const firstStream = videoMetadata.streams[0];
       if (!firstStream || firstStream.codec_type !== "video") {
         throw new TRPCError({
@@ -100,6 +97,7 @@ export const renderRouter = createTRPCRouter({
           message: `No video stream found in the file "${fileName}"`,
         });
       }
+
       const videoProperties: TVideoProperties = {
         id,
         width: firstStream.width,
@@ -113,15 +111,61 @@ export const renderRouter = createTRPCRouter({
         extension: path.extname(fileName).slice(1),
         url: path.join(uploadsPath, fileName),
       };
+
       const frameStamps: TFrameStamps = {
         start,
         end,
         sectors,
       };
-      const res = renderOverlayVideo({
+
+      const { videoPath: overlayVideoPath } = await renderOverlayVideo({
         videoProperties,
         frameStamps,
         pilotName,
       });
+
+      // Merge the overlay video with the original video
+      const outputVideoPath = path.join(rendersPath, id, "rendered.mp4");
+      await execa(ffmpegExePath, [
+        "-i",
+        input,
+        "-i",
+        overlayVideoPath,
+        "-filter_complex",
+        "[0:v][1:v]overlay=0:0",
+        "-c:v",
+        "libx264",
+        "-preset",
+        "fast",
+        "-crf",
+        "23",
+        "-c:a",
+        "copy",
+        outputVideoPath,
+      ]);
+
+      // Delete the overlay video file
+      try {
+        await fs.rm(overlayVideoPath, { force: true });
+      } catch (error) {
+        console.error("Error deleting overlay video file", error);
+      }
+
+      // Read the rendered video file
+      let renderedVideoBuffer: Buffer;
+      try {
+        renderedVideoBuffer = await fs.readFile(outputVideoPath);
+      } catch (error) {
+        console.error("Error reading rendered video file", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Error reading rendered video file",
+        });
+      }
+      return {
+        video: renderedVideoBuffer,
+        fileName: `${id}.mp4`,
+        type: "video/mp4",
+      };
     }),
 });
