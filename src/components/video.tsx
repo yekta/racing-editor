@@ -49,17 +49,17 @@ export default function Video({
   );
 }
 
-const pilotNameFontSize = 16;
-const lapTimeFontSize = 32;
-const sectorTitleFontSize = 16;
-const sectorValueFontSize = 20;
-const gap = 8;
-const sectorGap = 4;
+const pilotNameFontSize = 30;
+const lapTimeFontSize = 60;
+const sectorTitleFontSize = 30;
+const sectorValueFontSize = 40;
+const gap = 12;
+const sectorGap = 8;
 const margin = 24;
 const fontFamily = "Geist Mono";
 
 const textColor = "white";
-const mutedTextColor = "rgba(180, 180, 180, 1)";
+const mutedTextColor = "rgba(200, 200, 200, 1)";
 
 export function OverlayVideo({
   stageRef,
@@ -107,12 +107,12 @@ export function OverlayVideo({
     <div className="w-full h-full absolute z-10 left-0 top-0">
       <AutoSizer>
         {({ height, width }) => {
-          const canvasWidth =
+          const canvasContainerWidth =
             videoProperties.width / videoProperties.height >= width / height
               ? width
               : height * (videoProperties.width / videoProperties.height);
 
-          const canvasHeight =
+          const canvasContainerHeight =
             videoProperties.width / videoProperties.height < width / height
               ? height
               : width / (videoProperties.width / videoProperties.height);
@@ -135,19 +135,26 @@ export function OverlayVideo({
               style={{
                 marginTop,
                 marginLeft,
-                width: canvasWidth,
-                height: canvasHeight,
+                width: canvasContainerWidth,
+                height: canvasContainerHeight,
               }}
               className="overflow-hidden"
-              width={canvasWidth}
-              height={canvasHeight}
+              width={videoProperties.width}
+              height={videoProperties.height}
+              scale={{
+                x: canvasContainerWidth / videoProperties.width,
+                y: canvasContainerWidth / videoProperties.width,
+              }}
             >
-              <Layer width={canvasWidth} height={canvasHeight}>
-                <Group y={canvasHeight - divHeight - margin}>
+              <Layer
+                width={videoProperties.width}
+                height={videoProperties.height}
+              >
+                <Group y={videoProperties.height - divHeight - margin}>
                   {pilotName !== "" && (
                     <Text
-                      width={canvasWidth}
-                      height={canvasHeight}
+                      width={videoProperties.width}
+                      height={videoProperties.height}
                       align="center"
                       text={pilotName !== "" ? pilotName : `Pilot name`}
                       fontSize={pilotNameFontSize}
@@ -161,8 +168,8 @@ export function OverlayVideo({
                     />
                   )}
                   <Text
-                    width={canvasWidth}
-                    height={canvasHeight}
+                    width={videoProperties.width}
+                    height={videoProperties.height}
                     align="center"
                     fontSize={lapTimeFontSize}
                     fontStyle="bold"
@@ -193,7 +200,10 @@ export function OverlayVideo({
                   />
                   {sectors.length > 0 && (
                     <Group
-                      x={canvasWidth / 2 - (sectorWidth * sectors.length) / 2}
+                      x={
+                        videoProperties.width / 2 -
+                        (sectorWidth * sectors.length) / 2
+                      }
                       offsetY={
                         -1 *
                         ((pilotName !== "" ? pilotNameFontSize + gap : 0) +
