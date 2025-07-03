@@ -1,7 +1,7 @@
 import { getTimeStringFromFrame } from "@/components/helpers";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
 import { Ref, RefObject, useMemo } from "react";
-import { Group, Layer, Stage, Text } from "react-konva";
+import { Circle, Group, Layer, Rect, Stage, Text } from "react-konva";
 import AutoSizer from "react-virtualized-auto-sizer";
 import Konva from "konva";
 
@@ -49,14 +49,19 @@ export default function Video({
   );
 }
 
-const pilotNameFontSize = 30;
-const lapTimeFontSize = 60;
-const sectorTitleFontSize = 30;
-const sectorValueFontSize = 40;
-const gap = 12;
+const pilotNameFontSize = 32;
+const lapTimeFontSize = 52;
+const sectorTitleFontSize = 24;
+const sectorValueFontSize = 36;
+const mainGap = 16;
+const pilotNameGap = 10;
 const sectorGap = 8;
 const margin = 24;
 const fontFamily = "Geist Mono";
+const finishedSectorColor = "hsl(40 100% 70%)";
+const finishedRaceColor = "hsl(131 100% 75%)";
+const shadowColor = "rgba(0, 0, 0, 0.5)";
+const shadowOffsetY = 3;
 
 const textColor = "white";
 const mutedTextColor = "rgba(200, 200, 200, 1)";
@@ -95,13 +100,15 @@ export function OverlayVideo({
 
   const divHeight = useMemo(() => {
     return (
-      (pilotName !== "" ? pilotNameFontSize + gap : 0) +
+      (pilotName !== "" ? pilotNameFontSize + pilotNameGap : 0) +
       lapTimeFontSize +
       (sectors.length > 0
-        ? gap + sectorTitleFontSize + sectorGap + sectorValueFontSize
+        ? mainGap + sectorTitleFontSize + sectorGap + sectorValueFontSize
         : 0)
     );
   }, [sectors.length, pilotName]);
+
+  const rectHeight = useMemo(() => divHeight * 1.5, [divHeight]);
 
   return (
     <div className="w-full h-full absolute z-10 left-0 top-0">
@@ -129,6 +136,11 @@ export function OverlayVideo({
                 (height * (videoProperties.width / videoProperties.height)) / 2
               : 0;
 
+          const scale = canvasContainerWidth / videoProperties.width;
+
+          const fullWidth = videoProperties.width * scale;
+          const fullHeight = videoProperties.height * scale;
+
           return (
             <Stage
               ref={stageRef}
@@ -139,17 +151,31 @@ export function OverlayVideo({
                 height: canvasContainerHeight,
               }}
               className="overflow-hidden"
-              width={videoProperties.width}
-              height={videoProperties.height}
+              width={fullWidth}
+              height={fullHeight}
               scale={{
-                x: canvasContainerWidth / videoProperties.width,
-                y: canvasContainerWidth / videoProperties.width,
+                x: scale,
+                y: scale,
               }}
             >
               <Layer
                 width={videoProperties.width}
                 height={videoProperties.height}
               >
+                <Rect
+                  width={videoProperties.width}
+                  height={rectHeight}
+                  x={0}
+                  y={videoProperties.height - rectHeight}
+                  fillLinearGradientColorStops={[
+                    0,
+                    "rgba(0, 0, 0, 0)",
+                    1,
+                    "rgba(0, 0, 0, 0.5)",
+                  ]}
+                  fillLinearGradientStartPoint={{ x: 0, y: 0 }}
+                  fillLinearGradientEndPoint={{ x: 0, y: rectHeight }}
+                />
                 <Group y={videoProperties.height - divHeight - margin}>
                   {pilotName !== "" && (
                     <Text
@@ -160,10 +186,8 @@ export function OverlayVideo({
                       fontSize={pilotNameFontSize}
                       fill={textColor}
                       shadowEnabled={true}
-                      shadowColor="rgba(0, 0, 0, 0.3)"
-                      shadowOffsetY={2}
-                      shadowBlur={4}
-                      shadowOffsetX={0}
+                      shadowColor={shadowColor}
+                      shadowOffsetY={shadowOffsetY}
                       fontFamily={fontFamily}
                     />
                   )}
@@ -177,10 +201,14 @@ export function OverlayVideo({
                       frameStamps.start !== null &&
                       currentFrame < frameStamps.start
                         ? mutedTextColor
+                        : frameStamps.end !== null &&
+                          currentFrame >= frameStamps.end
+                        ? finishedRaceColor
                         : textColor
                     }
                     offsetY={
-                      -1 * (pilotName !== "" ? pilotNameFontSize + gap : 0)
+                      -1 *
+                      (pilotName !== "" ? pilotNameFontSize + pilotNameGap : 0)
                     }
                     text={getDisplayTime({
                       current: currentFrame,
@@ -192,10 +220,8 @@ export function OverlayVideo({
                       frameRate: videoProperties.frameRate,
                     })}
                     shadowEnabled={true}
-                    shadowColor="rgba(0, 0, 0, 0.3)"
-                    shadowOffsetY={4}
-                    shadowBlur={8}
-                    shadowOffsetX={0}
+                    shadowColor={shadowColor}
+                    shadowOffsetY={shadowOffsetY}
                     fontFamily={fontFamily}
                   />
                   {sectors.length > 0 && (
@@ -206,9 +232,11 @@ export function OverlayVideo({
                       }
                       offsetY={
                         -1 *
-                        ((pilotName !== "" ? pilotNameFontSize + gap : 0) +
+                        ((pilotName !== ""
+                          ? pilotNameFontSize + pilotNameGap
+                          : 0) +
                           lapTimeFontSize +
-                          gap)
+                          mainGap)
                       }
                       className="bg-background/50 flex text-lg leading-tight"
                     >
@@ -235,6 +263,8 @@ export function OverlayVideo({
                               ? frameStamps.start!
                               : frameStamps.sectors[i - 1])
                               ? mutedTextColor
+                              : currentFrame >= sector
+                              ? finishedSectorColor
                               : textColor
                           }
                           value={getDisplayTime({
@@ -295,10 +325,8 @@ function Sector({
         verticalAlign="middle"
         fill={titleFill}
         fontSize={titleFontSize}
-        shadowColor="rgba(0, 0, 0, 0.3)"
-        shadowOffsetY={2}
-        shadowBlur={4}
-        shadowOffsetX={0}
+        shadowColor={shadowColor}
+        shadowOffsetY={shadowOffsetY}
         fontFamily={fontFamily}
       />
       <Text
@@ -310,10 +338,8 @@ function Sector({
         fontStyle="bold"
         fontSize={valueFontSize}
         offsetY={-1 * (titleFontSize + gap)}
-        shadowColor="rgba(0, 0, 0, 0.3)"
-        shadowOffsetY={2}
-        shadowBlur={4}
-        shadowOffsetX={0}
+        shadowColor={shadowColor}
+        shadowOffsetY={shadowOffsetY}
         fontFamily={fontFamily}
       />
     </Group>

@@ -122,9 +122,6 @@ export default function Sidebar({
         /* overwrite if output.mp4 exists */
         "-y",
 
-        "-threads",
-        "4",
-
         /* ------------ input #0 : base video ------------ */
         "-i",
         baseVideoName,
@@ -148,9 +145,9 @@ export default function Sidebar({
         "-c:v",
         "libx264",
         "-preset",
-        "fast",
+        "veryfast",
         "-crf",
-        "23",
+        "18",
         "-pix_fmt",
         "yuv420p",
 
@@ -293,6 +290,7 @@ export default function Sidebar({
       </div>
       <div className="w-full p-4 border-t">
         <Button
+          isPending={isRendering || !isFfmpegLoaded}
           onClick={render}
           disabled={!isFfmpegLoaded || isRendering}
           className="w-full font-extrabold"

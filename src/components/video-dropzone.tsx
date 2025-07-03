@@ -1,13 +1,7 @@
 import {
   Dropzone,
   DropZoneArea,
-  DropzoneFileList,
-  DropzoneFileListItem,
-  DropzoneFileMessage,
   DropzoneTrigger,
-  DropzoneRemoveFile,
-  DropzoneRetryFile,
-  InfiniteProgress,
   useDropzone,
 } from "@/components/ui/dropzone";
 import { UploadIcon } from "lucide-react";
@@ -46,16 +40,6 @@ export default function VideoDropzone({ onDropFile }: TProps) {
             Click here or drag & drop your video
           </p>
         </DropzoneTrigger>
-        <DropzoneFileList>
-          {dropzone.fileStatuses.map((file) => (
-            <DropzoneFileListItem key={file.id} file={file}>
-              <DropzoneRetryFile>Retry</DropzoneRetryFile>
-              <DropzoneRemoveFile>Remove</DropzoneRemoveFile>
-              <DropzoneFileMessage />
-              <InfiniteProgress status={file.status} />
-            </DropzoneFileListItem>
-          ))}
-        </DropzoneFileList>
       </DropZoneArea>
     </Dropzone>
   );
