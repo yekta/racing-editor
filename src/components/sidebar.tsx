@@ -41,6 +41,12 @@ type TProps = {
   videoProperties: TVideoProperties;
   pilotName: string;
   onPilotNameChange: (value: string) => void;
+  isRendering: boolean;
+  setIsRendering: Dispatch<SetStateAction<boolean>>;
+  ffmpegProgress: number;
+  setFfmpegProgress: Dispatch<SetStateAction<number>>;
+  overlayProgress: number;
+  setOverlayProgress: Dispatch<SetStateAction<number>>;
 };
 
 export default function Sidebar({
@@ -49,11 +55,14 @@ export default function Sidebar({
   videoProperties,
   pilotName,
   onPilotNameChange,
+  isRendering,
+  setIsRendering,
+  ffmpegProgress,
+  setFfmpegProgress,
+  overlayProgress,
+  setOverlayProgress,
 }: TProps) {
   const [isFfmpegLoaded, setIsFfmpegLoaded] = useState(false);
-  const [isRendering, setIsRendering] = useState(false);
-  const [ffmpegProgress, setFfmpegProgress] = useState(0);
-  const [overlayProgress, setOverlayProgress] = useState(0);
   const ffmpegRef = useRef(new FFmpeg());
 
   const load = async () => {
@@ -199,6 +208,7 @@ export default function Sidebar({
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -210,11 +220,14 @@ export default function Sidebar({
           pilotName={pilotName}
           setFrameStamps={setFrameStamps}
           videoProperties={videoProperties}
-          isRendering={isRendering}
           isFfmpegLoaded={isFfmpegLoaded}
-          ffmpegProgress={ffmpegProgress}
-          overlayProgress={overlayProgress}
           render={render}
+          isRendering={isRendering}
+          setIsRendering={setIsRendering}
+          ffmpegProgress={ffmpegProgress}
+          setFfmpegProgress={setFfmpegProgress}
+          overlayProgress={overlayProgress}
+          setOverlayProgress={setOverlayProgress}
         />
       </div>
       <Sheet>
@@ -231,11 +244,14 @@ export default function Sidebar({
             pilotName={pilotName}
             setFrameStamps={setFrameStamps}
             videoProperties={videoProperties}
-            isRendering={isRendering}
             isFfmpegLoaded={isFfmpegLoaded}
-            ffmpegProgress={ffmpegProgress}
-            overlayProgress={overlayProgress}
             render={render}
+            isRendering={isRendering}
+            setIsRendering={setIsRendering}
+            ffmpegProgress={ffmpegProgress}
+            setFfmpegProgress={setFfmpegProgress}
+            overlayProgress={overlayProgress}
+            setOverlayProgress={setOverlayProgress}
           />
         </SheetContent>
       </Sheet>

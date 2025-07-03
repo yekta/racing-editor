@@ -1,6 +1,7 @@
 import { getTimeStringFromFrame } from "@/components/helpers";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
 import Konva from "konva";
+import { LoaderIcon } from "lucide-react";
 import { Ref, RefObject, useMemo } from "react";
 import { Group, Layer, Rect, Stage, Text } from "react-konva";
 import AutoSizer from "react-virtualized-auto-sizer";
@@ -15,6 +16,9 @@ type TProps = {
   sliderValue: number[];
   pilotName: string;
   stageRef: Ref<Konva.Stage | null>;
+  isRendering: boolean;
+  ffmpegProgress: number;
+  overlayProgress: number;
 };
 
 export default function Video({
@@ -27,6 +31,9 @@ export default function Video({
   sliderValue,
   pilotName,
   stageRef,
+  isRendering,
+  ffmpegProgress,
+  overlayProgress,
 }: TProps) {
   return (
     <div className="w-full h-full relative">
@@ -45,6 +52,16 @@ export default function Video({
         sliderValue={sliderValue}
         pilotName={pilotName}
       />
+      {isRendering && (
+        <div className="w-full h-full absolute left-0 top-0 bg-background/60 px-4 py-3 flex items-center justify-center gap-2 z-50">
+          <LoaderIcon className="size-6 shrink-0 animate-spin" />
+          <p className="min-w-0 leading-tight shrink font-semibold text-xl">
+            {ffmpegProgress > 0
+              ? `Rendering Video: ${Math.ceil(ffmpegProgress * 100)}%`
+              : `Rendering Overlay: ${Math.ceil(overlayProgress * 100)}%`}
+          </p>
+        </div>
+      )}
     </div>
   );
 }

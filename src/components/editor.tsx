@@ -31,6 +31,9 @@ export default function Editor() {
   const playPromiseRef = useRef<Promise<void> | null>(null);
   const [pilotName, setPilotName] = useState("");
   const stageRef = useRef<Konva.Stage | null>(null);
+  const [isRendering, setIsRendering] = useState(false);
+  const [ffmpegProgress, setFfmpegProgress] = useState(0);
+  const [overlayProgress, setOverlayProgress] = useState(0);
 
   // Safe play function that handles promises properly
   const safePlay = useCallback(async () => {
@@ -326,6 +329,9 @@ export default function Editor() {
                 sliderValue={sliderValue}
                 pilotName={pilotName}
                 stageRef={stageRef}
+                isRendering={isRendering}
+                ffmpegProgress={ffmpegProgress}
+                overlayProgress={overlayProgress}
               />
             </div>
             <div className="w-full flex flex-col border-t px-4 pt-4 pb-[calc(var(--safe-area-inset-bottom)+1rem)]">
@@ -403,6 +409,12 @@ export default function Editor() {
             frameStamps={frameStamps}
             setFrameStamps={setFrameStamps}
             videoProperties={videoProperties}
+            isRendering={isRendering}
+            setIsRendering={setIsRendering}
+            ffmpegProgress={ffmpegProgress}
+            setFfmpegProgress={setFfmpegProgress}
+            overlayProgress={overlayProgress}
+            setOverlayProgress={setOverlayProgress}
           />
         </div>
       )}
