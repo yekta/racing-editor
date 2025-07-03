@@ -235,7 +235,6 @@ export function OverlayVideo({
                           lapTimeFontSize +
                           mainGap)
                       }
-                      className="bg-background/50 flex text-lg leading-tight"
                     >
                       {sectors.map((sector, i) => (
                         <Sector
