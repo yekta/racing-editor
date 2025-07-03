@@ -64,7 +64,7 @@ const shadowColor = "rgba(0, 0, 0, 0.5)";
 const shadowOffsetY = 3;
 
 const textColor = "white";
-const mutedTextColor = "rgba(200, 200, 200, 1)";
+const mutedTextColor = "rgba(180, 180, 180, 1)";
 
 export function OverlayVideo({
   stageRef,
@@ -158,10 +158,7 @@ export function OverlayVideo({
                 y: scale,
               }}
             >
-              <Layer
-                width={videoProperties.width}
-                height={videoProperties.height}
-              >
+              <Layer>
                 <Rect
                   width={videoProperties.width}
                   height={rectHeight}

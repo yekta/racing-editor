@@ -50,8 +50,6 @@ export default function Sidebar({
   const ffmpegRef = useRef(new FFmpeg());
 
   const load = async () => {
-    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
-
     const ffmpeg = ffmpegRef.current;
     ffmpeg.on("log", ({ message }) => {
       console.log(message);
@@ -60,6 +58,7 @@ export default function Sidebar({
       setFfmpegProgress(progress);
     });
 
+    const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd";
     await ffmpeg.load({
       coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
       wasmURL: await toBlobURL(
@@ -67,6 +66,18 @@ export default function Sidebar({
         "application/wasm"
       ),
     });
+    /* const baseURL = "https://unpkg.com/@ffmpeg/core-mt@0.12.10/dist/umd";
+    await ffmpeg.load({
+      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
+      wasmURL: await toBlobURL(
+        `${baseURL}/ffmpeg-core.wasm`,
+        "application/wasm"
+      ),
+      workerURL: await toBlobURL(
+        `${baseURL}/ffmpeg-core.worker.js`,
+        "text/javascript"
+      ),
+    }); */
     setIsFfmpegLoaded(true);
   };
 
@@ -122,13 +133,20 @@ export default function Sidebar({
         /* overwrite if output.mp4 exists */
         "-y",
 
+        "-threads",
+        "0",
+
         /* ------------ input #0 : base video ------------ */
+        "-thread_queue_size",
+        "256",
         "-i",
         baseVideoName,
 
         /* ------------ input #1 : PNG sequence ---------- */
         "-framerate",
         String(videoProperties.frameRate),
+        "-thread_queue_size",
+        "256",
         "-i",
         `${overlayPrefix}_%06d.png`,
 
