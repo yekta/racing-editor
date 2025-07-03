@@ -166,6 +166,47 @@ export default function Editor() {
     });
   }, [videoProperties, safePause]);
 
+  const goToPrevFrameMulti = useCallback(async () => {
+    if (!videoRef.current || !videoProperties) return;
+
+    // Always pause first and update playing state
+    setIsPlaying(false);
+    await safePause();
+
+    setSliderValue((value) => {
+      const newValue = [Math.max(0, value[0] - videoProperties.frameRate / 2)];
+      if (videoRef.current) {
+        videoRef.current.currentTime =
+          (newValue[0] / videoProperties.totalFrames) *
+          videoProperties.duration;
+      }
+      return newValue;
+    });
+  }, [videoProperties, safePause]);
+
+  const goToNextFrameMulti = useCallback(async () => {
+    if (!videoRef.current || !videoProperties) return;
+
+    // Always pause first and update playing state
+    setIsPlaying(false);
+    await safePause();
+
+    setSliderValue((value) => {
+      const newValue = [
+        Math.min(
+          videoProperties.totalFrames,
+          value[0] + videoProperties.frameRate / 2
+        ),
+      ];
+      if (videoRef.current) {
+        videoRef.current.currentTime =
+          (newValue[0] / videoProperties.totalFrames) *
+          videoProperties.duration;
+      }
+      return newValue;
+    });
+  }, [videoProperties, safePause]);
+
   const jumpToPrevIndicator = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
 
@@ -190,7 +231,10 @@ export default function Editor() {
         (prevFrameStamp / videoProperties.totalFrames) *
         videoProperties.duration;
       videoRef.current.currentTime = newTime;
+      return;
     }
+
+    setSliderValue([0]);
   }, [videoProperties, frameStamps, safePause, sliderValue]);
 
   const jumpToNextIndicator = useCallback(async () => {
@@ -217,7 +261,10 @@ export default function Editor() {
         (nextFrameStamp / videoProperties.totalFrames) *
         videoProperties.duration;
       videoRef.current.currentTime = newTime;
+      return;
     }
+
+    setSliderValue([videoProperties.totalFrames]);
   }, [videoProperties, frameStamps, safePause, sliderValue]);
 
   const Indicators_ = useCallback(() => {
@@ -253,6 +300,8 @@ export default function Editor() {
     togglePlayPause,
     goToPrevFrame,
     goToNextFrame,
+    goToNextFrameMulti,
+    goToPrevFrameMulti,
     frameStamps,
     setFrameStamps,
     sliderValue,

@@ -6,6 +6,8 @@ type TProps = {
   togglePlayPause: () => void;
   goToPrevFrame: () => void;
   goToNextFrame: () => void;
+  goToPrevFrameMulti: () => void;
+  goToNextFrameMulti: () => void;
   jumpToPrevIndicator: () => void;
   jumpToNextIndicator: () => void;
   sliderValue: number[];
@@ -17,6 +19,8 @@ export default function useAppHotkeys({
   togglePlayPause,
   goToPrevFrame,
   goToNextFrame,
+  goToPrevFrameMulti,
+  goToNextFrameMulti,
   jumpToPrevIndicator,
   jumpToNextIndicator,
   frameStamps,
@@ -39,12 +43,22 @@ export default function useAppHotkeys({
     enableOnFormTags: false,
   });
 
-  useHotkeys("shift+arrowleft", jumpToPrevIndicator, {
+  useHotkeys("shift+arrowleft", goToPrevFrameMulti, {
     enableOnContentEditable: true,
     enableOnFormTags: false,
   });
 
-  useHotkeys("shift+arrowright", jumpToNextIndicator, {
+  useHotkeys("shift+arrowright", goToNextFrameMulti, {
+    enableOnContentEditable: true,
+    enableOnFormTags: false,
+  });
+
+  useHotkeys("shift+mod+arrowleft", jumpToPrevIndicator, {
+    enableOnContentEditable: true,
+    enableOnFormTags: false,
+  });
+
+  useHotkeys("shift+mod+arrowright", jumpToNextIndicator, {
     enableOnContentEditable: true,
     enableOnFormTags: false,
   });
