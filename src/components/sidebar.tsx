@@ -203,6 +203,9 @@ export default function Sidebar({
       console.log("Error during rendering:", error);
     } finally {
       setIsRendering(false);
+      setOverlayProgress(0);
+      setFfmpegProgress(0);
+      document.body.removeChild(container);
     }
   };
 
