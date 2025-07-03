@@ -1,6 +1,5 @@
 "use client";
 
-import ButtonsBar from "@/components/buttons-bar";
 import { createFFprobeWorker } from "@/components/helpers";
 import Indicators from "@/components/indicators";
 
@@ -280,15 +279,18 @@ export default function Editor() {
                 stageRef={stageRef}
               />
             </div>
-            <div className="w-full flex flex-col border-t p-4">
-              <div className="w-full flex items-start gap-4">
+            <div className="w-full flex flex-col border-t px-4 pt-4 pb-[calc(var(--safe-area-inset-bottom)+1rem)]">
+              <div className="w-full flex flex-col lg:flex-row gap-4">
                 <PlayPauseSection
                   togglePlayPause={togglePlayPause}
                   goToPrevFrame={goToPrevFrame}
                   goToNextFrame={goToNextFrame}
                   isPlaying={isPlaying}
+                  frameStamps={frameStamps}
+                  setFrameStamps={setFrameStamps}
+                  sliderValue={sliderValue}
                 />
-                <div className="flex-1 flex flex-col gap-4">
+                <div className="w-full flex flex-col gap-3 order-first lg:order-none">
                   <TimestampSection
                     videoProperties={videoProperties}
                     sliderValue={sliderValue}
@@ -341,12 +343,6 @@ export default function Editor() {
                     max={videoProperties.totalFrames}
                     step={1}
                     Indicators={Indicators_}
-                  />
-                  <ButtonsBar
-                    frameStamps={frameStamps}
-                    setFrameStamps={setFrameStamps}
-                    sliderValue={sliderValue}
-                    isPlaying={isPlaying}
                   />
                 </div>
               </div>

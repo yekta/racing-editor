@@ -2,6 +2,12 @@ import { getTimeStringFromFrame } from "@/components/helpers";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Sheet,
+  SheetContent,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { OverlayVideo } from "@/components/video";
 import { cn } from "@/lib/utils";
 import { FFmpeg } from "@ffmpeg/ffmpeg";
@@ -11,6 +17,7 @@ import {
   ClockIcon,
   FlagIcon,
   MapPinIcon,
+  MenuIcon,
   RocketIcon,
   SquareDashedIcon,
   TimerIcon,
@@ -195,7 +202,67 @@ export default function Sidebar({
   }, []);
 
   return (
-    <div className="w-80 border-l overflow-hidden flex flex-col relative">
+    <>
+      <div className="w-80 hidden lg:flex border-l overflow-hidden flex-col relative">
+        <Content
+          frameStamps={frameStamps}
+          onPilotNameChange={onPilotNameChange}
+          pilotName={pilotName}
+          setFrameStamps={setFrameStamps}
+          videoProperties={videoProperties}
+          isRendering={isRendering}
+          isFfmpegLoaded={isFfmpegLoaded}
+          ffmpegProgress={ffmpegProgress}
+          overlayProgress={overlayProgress}
+          render={render}
+        />
+      </div>
+      <Sheet>
+        <SheetTrigger className="lg:hidden fixed left-3 top-3 z-50" asChild>
+          <Button variant="ghost" className="bg-foreground/8">
+            <MenuIcon className="size-6" />
+          </Button>
+        </SheetTrigger>
+        <SheetContent hideClose side="left">
+          <SheetTitle className="sr-only">Lap Time & Sector Info</SheetTitle>
+          <Content
+            frameStamps={frameStamps}
+            onPilotNameChange={onPilotNameChange}
+            pilotName={pilotName}
+            setFrameStamps={setFrameStamps}
+            videoProperties={videoProperties}
+            isRendering={isRendering}
+            isFfmpegLoaded={isFfmpegLoaded}
+            ffmpegProgress={ffmpegProgress}
+            overlayProgress={overlayProgress}
+            render={render}
+          />
+        </SheetContent>
+      </Sheet>
+    </>
+  );
+}
+
+function Content({
+  frameStamps,
+  onPilotNameChange,
+  pilotName,
+  setFrameStamps,
+  videoProperties,
+  isRendering,
+  isFfmpegLoaded,
+  ffmpegProgress,
+  overlayProgress,
+  render,
+}: TProps & {
+  isRendering: boolean;
+  isFfmpegLoaded: boolean;
+  ffmpegProgress: number;
+  overlayProgress: number;
+  render: () => void;
+}) {
+  return (
+    <div className="w-full flex-1 min-w-0 overflow-hidden flex flex-col">
       <div className="flex-1 flex flex-col overflow-auto px-5 py-5 gap-5">
         <Input
           className="w-full"
@@ -306,7 +373,7 @@ export default function Sidebar({
           Icon={ClockIcon}
         />
       </div>
-      <div className="w-full p-4 border-t">
+      <div className="w-full px-4 pt-4 pb-[calc(var(--safe-area-inset-bottom)+1rem)] border-t">
         <Button
           isPending={isRendering || !isFfmpegLoaded}
           onClick={render}
@@ -381,7 +448,7 @@ function Section({
       {onClickDelete && (
         <Button
           size="icon"
-          variant="destructive-ghost"
+          variant="ghost-destructive"
           className="text-muted-foreground"
           onClick={onClickDelete}
         >

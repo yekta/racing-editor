@@ -20,12 +20,16 @@ const buttonVariants = cva(
         progress:
           "bg-progress text-background hover:bg-progress/80 focus-visible:ring-progress/20",
         outline:
-          "border bg-background hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border bg-background hover:bg-accent hover:text-accent-foreground",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50",
-        "destructive-ghost": "hover:bg-destructive/15 hover:text-destructive",
+        ghost: "hover:bg-accent hover:text-accent-foreground",
+        "ghost-destructive":
+          "text-destructive hover:bg-destructive/20 hover:text-destructive",
+        "ghost-progress":
+          "text-progress hover:bg-progress/20 hover:text-progress",
+        "ghost-warning": "text-warning hover:bg-warning/20 hover:text-warning",
+        "ghost-success": "text-success hover:bg-success/20 hover:text-success",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {

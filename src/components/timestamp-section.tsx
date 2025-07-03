@@ -17,7 +17,7 @@ export default function TimestampSection({
   isPlaying,
 }: TProps) {
   return (
-    <div className="w-full -mt-1 px-1 flex items-center gap-1.5">
+    <div className="w-full px-1 flex items-center gap-1.5">
       <p className="shrink min-w-0 leading-tight px-1">
         {getTimeStringFromFrame({
           frame: sliderValue[0],
