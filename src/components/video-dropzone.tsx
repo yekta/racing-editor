@@ -4,7 +4,7 @@ import {
   DropzoneTrigger,
   useDropzone,
 } from "@/components/ui/dropzone";
-import { ClapperboardIcon, DownloadIcon } from "lucide-react";
+import { ClapperboardIcon } from "lucide-react";
 
 type TProps = {
   onDropFile: (file: File) => void;
