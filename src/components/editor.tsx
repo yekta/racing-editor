@@ -1,6 +1,7 @@
 "use client";
 
 import ButtonsBar from "@/components/buttons-bar";
+import { createFFprobeWorker } from "@/components/helpers";
 import Indicators from "@/components/indicators";
 
 import PlayPauseSection from "@/components/play-pause-section";
@@ -11,11 +12,8 @@ import { Slider } from "@/components/ui/slider";
 import Video from "@/components/video";
 import VideoDropzone from "@/components/video-dropzone";
 import useAppHotkeys from "@/lib/use-app-hotkeys";
-import { FFprobeWorker } from "ffprobe-wasm";
 import Konva from "konva";
 import { useCallback, useEffect, useRef, useState } from "react";
-
-const worker = new FFprobeWorker();
 
 export default function Editor() {
   const [videoProperties, setVideoProperties] =
@@ -74,6 +72,11 @@ export default function Editor() {
 
   const onDropFile = async (file: File) => {
     if (file && file.type.startsWith("video/")) {
+      const worker = await createFFprobeWorker();
+      if (worker === null) {
+        console.error("Failed to create FFprobe worker");
+        return;
+      }
       const result = await worker.getFileInfo(file);
       if (result.streams.length > 0) {
         const stream = result.streams[0];

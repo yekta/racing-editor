@@ -50,3 +50,9 @@ export function getTimeStringFromFrame({
   const maxTime = totalFrames / frameRate;
   return getTimeString({ time, maxTime });
 }
+
+export async function createFFprobeWorker() {
+  if (typeof window === "undefined") return null;
+  const { FFprobeWorker } = await import("ffprobe-wasm");
+  return new FFprobeWorker();
+}
