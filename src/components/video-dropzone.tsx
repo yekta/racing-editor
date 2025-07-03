@@ -4,7 +4,7 @@ import {
   DropzoneTrigger,
   useDropzone,
 } from "@/components/ui/dropzone";
-import { DownloadIcon } from "lucide-react";
+import { ClapperboardIcon, DownloadIcon } from "lucide-react";
 
 type TProps = {
   onDropFile: (file: File) => void;
@@ -32,7 +32,7 @@ export default function VideoDropzone({ onDropFile }: TProps) {
     <Dropzone {...dropzone}>
       <DropZoneArea className="w-full h-full border-none">
         <DropzoneTrigger className="flex min-h-0 flex-col px-8 py-8 items-center justify-center gap-2">
-          <DownloadIcon className="size-10 shrink-0" />
+          <ClapperboardIcon className="size-10 shrink-0" />
           <p className="text-xl leading-tight text-center font-bold">
             Add a video
           </p>

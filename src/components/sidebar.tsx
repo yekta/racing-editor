@@ -149,20 +149,20 @@ export default function Sidebar({
         /* overwrite if output.mp4 exists */
         "-y",
 
-        "-threads",
-        "0",
+        /* "-threads",
+        "0", */
 
         /* ------------ input #0 : base video ------------ */
-        "-thread_queue_size",
-        "256",
+        /* "-thread_queue_size",
+        "256", */
         "-i",
         baseVideoName,
 
         /* ------------ input #1 : PNG sequence ---------- */
         "-framerate",
         String(videoProperties.frameRate),
-        "-thread_queue_size",
-        "256",
+        /* "-thread_queue_size",
+        "256", */
         "-i",
         `${overlayPrefix}_%06d.png`,
 
