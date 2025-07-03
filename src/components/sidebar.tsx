@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetTitle,
   SheetTrigger,
@@ -17,7 +18,6 @@ import {
   ClockIcon,
   FlagIcon,
   MapPinIcon,
-  MenuIcon,
   RocketIcon,
   SquareDashedIcon,
   TimerIcon,
@@ -234,12 +234,17 @@ export default function Sidebar({
         />
       </div>
       <Sheet>
-        <SheetTrigger className="lg:hidden fixed left-3 top-3 z-50" asChild>
-          <Button variant="ghost" className="bg-foreground/8">
-            <MenuIcon className="size-6" />
+        <SheetTrigger asChild>
+          <Button className="lg:hidden left-1/2 max-w-[calc(100%-1.5rem)] -translate-x-1/2 top-3 fixed z-50 font-extrabold">
+            Render
           </Button>
         </SheetTrigger>
-        <SheetContent hideClose side="left">
+        <SheetContent
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          hideClose
+          side="bottom"
+          className="h-[calc(100%-6rem)] rounded-t-2xl overflow-hidden"
+        >
           <SheetTitle className="sr-only">Lap Time & Sector Info</SheetTitle>
           <Content
             frameStamps={frameStamps}
@@ -255,6 +260,7 @@ export default function Sidebar({
             setFfmpegProgress={setFfmpegProgress}
             overlayProgress={overlayProgress}
             setOverlayProgress={setOverlayProgress}
+            hasClose
           />
         </SheetContent>
       </Sheet>
@@ -273,12 +279,14 @@ function Content({
   ffmpegProgress,
   overlayProgress,
   render,
+  hasClose,
 }: TProps & {
   isRendering: boolean;
   isFfmpegLoaded: boolean;
   ffmpegProgress: number;
   overlayProgress: number;
   render: () => void;
+  hasClose?: boolean;
 }) {
   return (
     <div className="w-full flex-1 min-w-0 overflow-hidden flex flex-col">
@@ -392,7 +400,7 @@ function Content({
           Icon={ClockIcon}
         />
       </div>
-      <div className="w-full px-4 pt-4 pb-[calc(var(--safe-area-inset-bottom)+1rem)] border-t">
+      <div className="w-full flex flex-col gap-2 px-4 pt-4 pb-[calc(var(--safe-area-inset-bottom)+1rem)] border-t">
         <Button
           isPending={isRendering || !isFfmpegLoaded}
           onClick={render}
@@ -407,6 +415,13 @@ function Content({
             ? "Render"
             : "Loading FFmpeg"}
         </Button>
+        {hasClose && (
+          <SheetClose asChild>
+            <Button variant="outline" className="w-full font-extrabold ">
+              Close
+            </Button>
+          </SheetClose>
+        )}
       </div>
     </div>
   );

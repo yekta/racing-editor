@@ -44,6 +44,7 @@ export default function Video({
         onPlay={onPlay}
         onPause={onPause}
         onTimeUpdate={onTimeUpdate}
+        autoPlay={false}
       />
       <OverlayVideo
         stageRef={stageRef}
