@@ -1,9 +1,9 @@
 import { getTimeStringFromFrame } from "@/components/helpers";
 import { TFrameStamps, TVideoProperties } from "@/components/types";
-import { Ref, RefObject, useMemo } from "react";
-import { Circle, Group, Layer, Rect, Stage, Text } from "react-konva";
-import AutoSizer from "react-virtualized-auto-sizer";
 import Konva from "konva";
+import { Ref, RefObject, useMemo } from "react";
+import { Group, Layer, Rect, Stage, Text } from "react-konva";
+import AutoSizer from "react-virtualized-auto-sizer";
 
 type TProps = {
   videoRef: RefObject<HTMLVideoElement | null>;
