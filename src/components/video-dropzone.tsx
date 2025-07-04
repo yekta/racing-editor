@@ -31,13 +31,13 @@ export default function VideoDropzone({ onDropFile }: TProps) {
   return (
     <Dropzone {...dropzone}>
       <DropZoneArea className="w-full h-full border-none">
-        <DropzoneTrigger className="flex min-h-0 flex-col px-8 py-8 items-center justify-center gap-2">
+        <DropzoneTrigger className="flex min-h-0 flex-col px-10 py-8 items-center justify-center gap-2">
           <ClapperboardIcon className="size-10 shrink-0" />
           <p className="text-xl leading-tight text-center font-bold">
             Add a video
           </p>
           <p className="w-full text-sm leading-tight text-center text-muted-foreground">
-            Click here or drag & drop your video
+            Click or drop your video here
           </p>
         </DropzoneTrigger>
       </DropZoneArea>
