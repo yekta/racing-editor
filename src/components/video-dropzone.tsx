@@ -37,7 +37,7 @@ export default function VideoDropzone({ onDropFile }: TProps) {
             Add a video
           </p>
           <p className="w-full text-sm leading-tight text-center text-muted-foreground">
-            Click here or drag & drop your video
+            Click or drop your video here
           </p>
         </DropzoneTrigger>
       </DropZoneArea>
