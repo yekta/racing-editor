@@ -67,10 +67,10 @@ export default function Video({
   );
 }
 
-const pilotNameFontSize = 32;
-const lapTimeFontSize = 52;
+const pilotNameFontSize = 28;
+const lapTimeFontSize = 48;
 const sectorTitleFontSize = 24;
-const sectorValueFontSize = 36;
+const sectorValueFontSize = 34;
 const mainGap = 16;
 const pilotNameGap = 10;
 const sectorGap = 8;
@@ -78,8 +78,9 @@ const margin = 24;
 const fontFamily = "Geist Mono";
 const finishedSectorColor = "hsl(40 100% 70%)";
 const finishedRaceColor = "hsl(131 100% 75%)";
-const shadowColor = "rgba(0, 0, 0, 0.5)";
-const shadowOffsetY = 3;
+const shadowColor = "rgba(0, 0, 0, 0.25)";
+const shadowOffset = 3;
+const shadowOffsetSmall = 2;
 
 const textColor = "white";
 const mutedTextColor = "rgba(180, 180, 180, 1)";
@@ -202,7 +203,8 @@ export function OverlayVideo({
                       fill={textColor}
                       shadowEnabled={true}
                       shadowColor={shadowColor}
-                      shadowOffsetY={shadowOffsetY}
+                      shadowOffsetY={shadowOffsetSmall}
+                      shadowOffsetX={shadowOffsetSmall}
                       fontFamily={fontFamily}
                     />
                   )}
@@ -236,7 +238,8 @@ export function OverlayVideo({
                     })}
                     shadowEnabled={true}
                     shadowColor={shadowColor}
-                    shadowOffsetY={shadowOffsetY}
+                    shadowOffsetY={shadowOffset}
+                    shadowOffsetX={shadowOffset}
                     fontFamily={fontFamily}
                   />
                   {sectors.length > 0 && (
@@ -340,7 +343,8 @@ function Sector({
         fill={titleFill}
         fontSize={titleFontSize}
         shadowColor={shadowColor}
-        shadowOffsetY={shadowOffsetY}
+        shadowOffsetY={shadowOffsetSmall}
+        shadowOffsetX={shadowOffsetSmall}
         fontFamily={fontFamily}
       />
       <Text
@@ -353,7 +357,8 @@ function Sector({
         fontSize={valueFontSize}
         offsetY={-1 * (titleFontSize + gap)}
         shadowColor={shadowColor}
-        shadowOffsetY={shadowOffsetY}
+        shadowOffsetY={shadowOffset}
+        shadowOffsetX={shadowOffset}
         fontFamily={fontFamily}
       />
     </Group>
