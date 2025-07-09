@@ -133,6 +133,16 @@ export default function Editor() {
     }
   }, [isPlaying, safePlay, safePause]);
 
+  const getCurrentTime = useCallback(
+    (value: number) => {
+      if (videoRef.current && videoProperties) {
+        return (value / videoProperties.totalFrames) * videoProperties.duration;
+      }
+      return 0;
+    },
+    [videoProperties]
+  );
+
   const goToPrevFrame = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
 
@@ -143,13 +153,11 @@ export default function Editor() {
     setSliderValue((value) => {
       const newValue = [Math.max(0, value[0] - 1)];
       if (videoRef.current) {
-        videoRef.current.currentTime =
-          (newValue[0] / videoProperties.totalFrames) *
-          videoProperties.duration;
+        videoRef.current.currentTime = getCurrentTime(newValue[0]);
       }
       return newValue;
     });
-  }, [videoProperties, safePause]);
+  }, [videoProperties, safePause, getCurrentTime]);
 
   const goToNextFrame = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
@@ -161,13 +169,11 @@ export default function Editor() {
     setSliderValue((value) => {
       const newValue = [Math.min(videoProperties.totalFrames, value[0] + 1)];
       if (videoRef.current) {
-        videoRef.current.currentTime =
-          (newValue[0] / videoProperties.totalFrames) *
-          videoProperties.duration;
+        videoRef.current.currentTime = getCurrentTime(newValue[0]);
       }
       return newValue;
     });
-  }, [videoProperties, safePause]);
+  }, [videoProperties, safePause, getCurrentTime]);
 
   const goToPrevFrameMulti = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
@@ -178,14 +184,12 @@ export default function Editor() {
 
     setSliderValue((value) => {
       const newValue = [Math.max(0, value[0] - videoProperties.frameRate / 2)];
-      if (videoRef.current) {
-        videoRef.current.currentTime =
-          (newValue[0] / videoProperties.totalFrames) *
-          videoProperties.duration;
+      if (videoRef.current !== null) {
+        videoRef.current.currentTime = getCurrentTime(newValue[0]);
       }
       return newValue;
     });
-  }, [videoProperties, safePause]);
+  }, [videoProperties, safePause, getCurrentTime]);
 
   const goToNextFrameMulti = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
@@ -201,14 +205,12 @@ export default function Editor() {
           value[0] + videoProperties.frameRate / 2
         ),
       ];
-      if (videoRef.current) {
-        videoRef.current.currentTime =
-          (newValue[0] / videoProperties.totalFrames) *
-          videoProperties.duration;
+      if (videoRef.current !== null) {
+        videoRef.current.currentTime = getCurrentTime(newValue[0]);
       }
       return newValue;
     });
-  }, [videoProperties, safePause]);
+  }, [videoProperties, safePause, getCurrentTime]);
 
   const jumpToPrevIndicator = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
@@ -230,15 +232,13 @@ export default function Editor() {
 
     if (prevFrameStamp !== undefined) {
       setSliderValue([prevFrameStamp]);
-      const newTime =
-        (prevFrameStamp / videoProperties.totalFrames) *
-        videoProperties.duration;
-      videoRef.current.currentTime = newTime;
+      videoRef.current.currentTime = getCurrentTime(prevFrameStamp);
       return;
     }
 
+    videoRef.current.currentTime = 0;
     setSliderValue([0]);
-  }, [videoProperties, frameStamps, safePause, sliderValue]);
+  }, [videoProperties, frameStamps, safePause, sliderValue, getCurrentTime]);
 
   const jumpToNextIndicator = useCallback(async () => {
     if (!videoRef.current || !videoProperties) return;
@@ -260,15 +260,13 @@ export default function Editor() {
 
     if (nextFrameStamp !== undefined) {
       setSliderValue([nextFrameStamp]);
-      const newTime =
-        (nextFrameStamp / videoProperties.totalFrames) *
-        videoProperties.duration;
-      videoRef.current.currentTime = newTime;
+      videoRef.current.currentTime = getCurrentTime(nextFrameStamp);
       return;
     }
 
     setSliderValue([videoProperties.totalFrames]);
-  }, [videoProperties, frameStamps, safePause, sliderValue]);
+    videoRef.current.currentTime = videoProperties.duration;
+  }, [videoProperties, frameStamps, safePause, sliderValue, getCurrentTime]);
 
   const Indicators_ = useCallback(() => {
     if (!videoProperties) return null;
